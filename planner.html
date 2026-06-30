@@ -17,12 +17,14 @@
       display: flex; align-items: center; gap: 0.75rem;
       position: sticky; top: 0; z-index: 100;
     }
-    .app-header h1 { font-size: 1.1rem; flex: 1; }
-    .badge { font-size: 0.65rem; font-weight: 700; padding: 0.2rem 0.45rem; border-radius: 4px; background: #fef3c7; color: #92400e; }
+    .app-header h1 { font-size: 1.1rem; flex-shrink: 0; white-space: nowrap; }
+    .badge { font-size: 0.65rem; font-weight: 700; padding: 0.2rem 0.45rem; border-radius: 4px; background: #fef3c7; color: #92400e; flex-shrink: 0; }
     .badge.staging { background: #dbeafe; color: #1e40af; }
     .badge.production { background: #dcfce7; color: #166534; }
-    .header-btn { background: none; border: 1px solid rgba(255,255,255,0.4); color: #fff; padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+    .header-btn { background: none; border: 1px solid rgba(255,255,255,0.4); color: #fff; padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
     .header-btn:hover { background: rgba(255,255,255,0.1); }
+    .header-actions { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; overflow-x: auto; min-width: 0; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .header-actions::-webkit-scrollbar { display: none; }
 
     /* Views */
     .view { display: none; padding: 1.25rem; max-width: 900px; margin: 0 auto; }
@@ -164,11 +166,13 @@
   <header class="app-header">
     <h1>Meal Planner</h1>
     <span id="envBadge" class="badge">LOCAL</span>
-    <button class="header-btn" onclick="openStoresModal()">Stores</button>
-    <button class="header-btn" onclick="window.location.href='recipes.html'">Recipes</button>
-    <button class="header-btn" onclick="window.location.href='shopping.html'">Shopping</button>
-    <button class="header-btn" id="adminBtn" style="display:none" onclick="window.location.href='admin.html'">Admin</button>
-    <button class="header-btn" id="logoutBtn">Logout</button>
+    <div class="header-actions">
+      <button class="header-btn" onclick="openStoresModal()">Stores</button>
+      <button class="header-btn" onclick="window.location.href='recipes.html'">Recipes</button>
+      <button class="header-btn" onclick="window.location.href='shopping.html'">Shopping</button>
+      <button class="header-btn" id="adminBtn" style="display:none" onclick="window.location.href='admin.html'">Admin</button>
+      <button class="header-btn" id="logoutBtn">Logout</button>
+    </div>
   </header>
 
   <!-- View: Plans list -->
