@@ -1,6 +1,14 @@
-// Trap browser back button — internal navigation uses showView() instead
-history.pushState(null, '', location.href);
-window.addEventListener('popstate', () => history.pushState(null, '', location.href));
+// History-based navigation: views push state so the browser back button works
+history.replaceState({ view: 'plans' }, '', location.href);
+window.addEventListener('popstate', (e) => {
+  const state = e.state || { view: 'plans' };
+  if (state.view === 'planDetail' && currentPlan) {
+    showView('planDetail');
+    renderDateGrid();
+  } else {
+    showView('plans');
+  }
+});
 
 // State
 let currentView = 'plans';
@@ -381,6 +389,7 @@ async function openPlan(planId) {
 
     renderDateGrid();
     showView('planDetail');
+    history.pushState({ view: 'planDetail', planId }, '', location.href);
   } catch (err) {
     showToast(err.message);
   }
@@ -422,6 +431,8 @@ function deletePlanFromDetail() {
     try {
       await apiDelete(`/mealplans/${currentPlanId}`);
       await loadPlans();
+      currentPlan = null;
+      history.replaceState({ view: 'plans' }, '', location.href);
       showView('plans');
       showToast('Meal plan deleted');
     } catch (err) {
@@ -442,7 +453,7 @@ function openSlot(date, mealTime) {
   const badge = document.getElementById('slotMealTimeBadge');
   badge.textContent = mealTime;
   badge.className = `meal-time-badge ${mealTime}`;
-  document.getElementById('backToPlanBtn').onclick = () => showView('planDetail');
+  document.getElementById('backToPlanBtn').onclick = () => history.back();
   document.getElementById('clearSlotBtn').onclick = () => clearSlot();
 
   // Load existing dishes for this slot or start empty
@@ -466,6 +477,7 @@ function openSlot(date, mealTime) {
 
   renderDishBlocks();
   showView('slotEditor');
+  history.pushState({ view: 'slotEditor' }, '', location.href);
 }
 
 function toggleEatingOut() {
@@ -861,8 +873,7 @@ async function saveSlot() {
         : { ...result, eatingOut: currentSlotEatingOut };
       mockPersistDayMeal(currentPlanId, currentDate, currentMealTime, dishes, currentSlotEatingOut);
       showToast('Slot saved');
-      showView('planDetail');
-      renderDateGrid();
+      history.back();
     }
   } catch (err) {
     showToast(err.message);
@@ -877,17 +888,14 @@ function clearSlot() {
       delete currentDayMeals[sk];
       mockRemoveDayMeal(currentPlanId, currentDate, currentMealTime);
       currentSlotDishes = [];
-      renderDishBlocks();
-      renderDateGrid();
-      showView('planDetail');
       showToast('Slot cleared');
+      history.back();
     } catch (err) {
       // Slot may not exist yet — just clear locally
       const sk = `DAYMEAL#${currentDate}#${currentMealTime}`;
       delete currentDayMeals[sk];
       currentSlotDishes = [];
-      renderDateGrid();
-      showView('planDetail');
+      history.back();
     }
   });
 }
