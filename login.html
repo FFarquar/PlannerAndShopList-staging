@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planner &amp; Shop List — Login</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="./favicon.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 380px;
+    }
+    h1 { font-size: 1.5rem; color: #1e3a5f; margin-bottom: 0.25rem; }
+    .subtitle { font-size: 0.85rem; color: #64748b; margin-bottom: 2rem; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 1.1rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus { border-color: #3b82f6; }
+    button[type="submit"] {
+      width: 100%;
+      padding: 0.75rem;
+      background: #1e3a5f;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button[type="submit"]:hover { background: #2d5a8e; }
+    button[type="submit"]:disabled { background: #94a3b8; cursor: not-allowed; }
+    .error {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .env-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .env-badge.staging { background: #dbeafe; color: #1e40af; }
+    .env-badge.production { background: #dcfce7; color: #166534; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Planner &amp; Shop List</h1>
+    <p class="subtitle">Meal planning and shopping made easy</p>
+    <div id="envBadge" class="env-badge">LOCAL</div>
+    <div id="errorMsg" class="error"></div>
+    <form id="loginForm">
+      <label for="loginID">Username</label>
+      <input type="text" id="loginID" name="loginID" autocomplete="username" required />
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required />
+      <button type="submit" id="submitBtn">Sign In</button>
+    </form>
+  </div>
+
+  <script src="./config.js"></script>
+  <script>
+    const env = window.APP_CONFIG?.ENVIRONMENT || 'LOCAL';
+    const badge = document.getElementById('envBadge');
+    badge.textContent = env;
+    if (env === 'STAGING') badge.classList.add('staging');
+    if (env === 'PRODUCTION') badge.classList.add('production');
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const loginID = document.getElementById('loginID').value.trim();
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('errorMsg');
+      const submitBtn = document.getElementById('submitBtn');
+
+      errorMsg.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in…';
+
+      try {
+        const USE_MOCK = window.APP_CONFIG?.USE_MOCK === true;
+        let data;
+
+        if (USE_MOCK) {
+          const res = await fetch('./mockdata/mock-users.json');
+          const users = await res.json();
+          const user = users.find(u => u.loginID === loginID && u.active);
+          if (!user || user.password !== password) throw new Error('Invalid credentials');
+          data = { accessToken: 'mock-token-local', role: user.role };
+        } else {
+          const res = await fetch(`${window.APP_CONFIG.API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ loginID, password }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || 'Login failed');
+          }
+          data = await res.json();
+        }
+
+        localStorage.setItem('authToken', data.accessToken || data.token);
+        localStorage.setItem('userRole', data.role || 'USER');
+        localStorage.setItem('userLoginID', loginID);
+        window.location.href = 'planner.html';
+      } catch (err) {
+        errorMsg.textContent = err.message || 'Login failed. Please try again.';
+        errorMsg.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

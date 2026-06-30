@@ -1,0 +1,41 @@
+[
+  {
+    "PK": "MEALPLAN#plan-1",
+    "SK": "DAYMEAL#2026-06-30#DINNER",
+    "mealPlanId": "plan-1",
+    "date": "2026-06-30",
+    "mealTime": "DINNER",
+    "dishes": [
+      {
+        "dishId": "dish-1",
+        "dishName": "Lasagna",
+        "ingredients": [
+          { "id": "ing-1a", "name": "Mince", "quantity": 500, "unit": "g", "defaultStore": "Butcher", "needToBuy": true },
+          { "id": "ing-1b", "name": "Pasta Sauce", "quantity": 1, "unit": "jar", "defaultStore": "Coles", "needToBuy": true },
+          { "id": "ing-1c", "name": "Lasagna Sheets", "quantity": 1, "unit": "pack", "defaultStore": "Coles", "needToBuy": true },
+          { "id": "ing-1d", "name": "Tinned Tomatoes", "quantity": 2, "unit": "tin", "defaultStore": "Coles", "needToBuy": false },
+          { "id": "ing-1e", "name": "Mozzarella", "quantity": 200, "unit": "g", "defaultStore": "Coles", "needToBuy": true }
+        ]
+      }
+    ]
+  },
+  {
+    "PK": "MEALPLAN#plan-1",
+    "SK": "DAYMEAL#2026-07-02#DINNER",
+    "mealPlanId": "plan-1",
+    "date": "2026-07-02",
+    "mealTime": "DINNER",
+    "dishes": [
+      {
+        "dishId": "dish-3",
+        "dishName": "Roast Chicken",
+        "ingredients": [
+          { "id": "ing-3a", "name": "Whole Chicken", "quantity": 1, "unit": "", "defaultStore": "Butcher", "needToBuy": true },
+          { "id": "ing-3b", "name": "Potatoes", "quantity": 1, "unit": "kg", "defaultStore": "Fruit Market", "needToBuy": true },
+          { "id": "ing-3c", "name": "Carrots", "quantity": 500, "unit": "g", "defaultStore": "Fruit Market", "needToBuy": true },
+          { "id": "ing-3d", "name": "Olive Oil", "quantity": 1, "unit": "bottle", "defaultStore": "Coles", "needToBuy": false }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,4 @@
+[
+  { "loginID": "Dean_P", "password": "Password123", "role": "ADMIN", "active": true },
+  { "loginID": "Jenny_P", "password": "Password456", "role": "USER", "active": true }
+]

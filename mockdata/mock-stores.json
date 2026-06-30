@@ -1,0 +1,6 @@
+[
+  { "storeId": "store-1", "name": "Coles", "displayOrder": 1 },
+  { "storeId": "store-2", "name": "Butcher", "displayOrder": 2 },
+  { "storeId": "store-3", "name": "Fruit Market", "displayOrder": 3 },
+  { "storeId": "store-4", "name": "Aldi", "displayOrder": 4 }
+]

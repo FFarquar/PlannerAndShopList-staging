@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recipes</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" href="./favicon.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; color: #1e293b; min-height: 100vh; }
+
+    .app-header {
+      background: #1e3a5f; color: #fff;
+      padding: 0.75rem 1.25rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .app-header h1 { font-size: 1.1rem; flex: 1; }
+    .badge { font-size: 0.65rem; font-weight: 700; padding: 0.2rem 0.45rem; border-radius: 4px; background: #fef3c7; color: #92400e; }
+    .badge.staging { background: #dbeafe; color: #1e40af; }
+    .badge.production { background: #dcfce7; color: #166534; }
+    .header-btn { background: none; border: 1px solid rgba(255,255,255,0.4); color: #fff; padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+    .header-btn:hover { background: rgba(255,255,255,0.1); }
+
+    .main { padding: 1.25rem; max-width: 900px; margin: 0 auto; }
+
+    .page-title { font-size: 1.3rem; font-weight: 700; color: #1e3a5f; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+
+    .btn { padding: 0.5rem 1rem; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: background 0.15s; }
+    .btn-primary { background: #1e3a5f; color: #fff; }
+    .btn-primary:hover { background: #2d5a8e; }
+    .btn-secondary { background: #e2e8f0; color: #1e293b; }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-danger { background: #fee2e2; color: #b91c1c; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-success { background: #dcfce7; color: #166534; }
+    .btn-success:hover { background: #bbf7d0; }
+    .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.8rem; }
+    .btn-xs { padding: 0.15rem 0.45rem; font-size: 0.75rem; border-radius: 5px; vertical-align: middle; }
+
+    .dishes-grid { display: flex; flex-direction: column; gap: 0.35rem; }
+
+    .dish-card {
+      background: #fff; border-radius: 8px; padding: 0.55rem 0.9rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .dish-name { font-size: 0.92rem; font-weight: 700; color: #1e3a5f; min-width: 130px; flex-shrink: 0; }
+    .dish-meta { font-size: 0.74rem; color: #94a3b8; white-space: nowrap; flex-shrink: 0; }
+
+    .recipe-badges { display: flex; gap: 0.3rem; flex: 1; }
+    .recipe-badge {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 20px; white-space: nowrap;
+    }
+    .recipe-badge.url { background: #dbeafe; color: #1e40af; }
+    .recipe-badge.file { background: #dcfce7; color: #166534; }
+    .recipe-badge.none { background: #f1f5f9; color: #94a3b8; }
+
+    .dish-card-actions { display: flex; gap: 0.3rem; flex-shrink: 0; margin-left: auto; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; font-size: 0.95rem; }
+
+    /* Modals */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: none; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 12px; padding: 1.75rem; width: 100%; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+    .modal h3 { font-size: 1.1rem; margin-bottom: 1.25rem; color: #1e3a5f; }
+    .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; flex-wrap: wrap; }
+
+    .form-row { margin-bottom: 0.85rem; }
+    .form-row label { display: block; font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
+    .form-row input, .form-row select { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; outline: none; background: #fff; }
+    .form-row input:focus, .form-row select:focus { border-color: #3b82f6; }
+
+    /* Ingredients table in dish modal */
+    .ing-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .ing-table th { text-align: left; font-size: 0.75rem; color: #64748b; font-weight: 600; padding: 0.3rem 0.35rem; border-bottom: 1px solid #f1f5f9; }
+    .ing-table td { padding: 0.3rem 0.35rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+    .ing-input { width: 100%; border: 1px solid transparent; border-radius: 5px; padding: 0.2rem 0.35rem; font-size: 0.83rem; background: transparent; outline: none; }
+    .ing-input:focus { border-color: #93c5fd; background: #fff; }
+    .ing-qty { width: 55px; }
+    .ing-qty::-webkit-outer-spin-button, .ing-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .ing-qty { -moz-appearance: textfield; }
+    .ing-unit { width: 55px; }
+    .ing-store { border: 1px solid transparent; border-radius: 5px; padding: 0.2rem 0.3rem; font-size: 0.8rem; background: transparent; outline: none; width: 100%; }
+    .ing-store:focus { border-color: #93c5fd; background: #fff; }
+    .ing-del { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.95rem; padding: 0 0.15rem; }
+    .add-ing-btn { background: none; border: 1px dashed #94a3b8; color: #64748b; border-radius: 6px; padding: 0.3rem 0.65rem; cursor: pointer; font-size: 0.8rem; }
+    .add-ing-btn:hover { background: #f8fafc; }
+
+    /* Recipe modal */
+    .recipe-type-toggle { display: flex; gap: 0; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; }
+    .recipe-type-btn { flex: 1; padding: 0.5rem; border: none; cursor: pointer; font-size: 0.88rem; font-weight: 600; background: #f8fafc; color: #64748b; transition: background 0.15s, color 0.15s; }
+    .recipe-type-btn.active { background: #1e3a5f; color: #fff; }
+
+    .recipe-panel { display: none; }
+    .recipe-panel.active { display: block; }
+
+    .file-current { background: #f8fafc; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; color: #374151; }
+    .file-current .file-icon { font-size: 1.1rem; }
+    .file-current .file-name { flex: 1; font-weight: 600; }
+    .file-current .file-date { font-size: 0.75rem; color: #94a3b8; }
+
+    .upload-progress { margin-top: 0.5rem; }
+    .progress-bar-wrap { background: #e2e8f0; border-radius: 4px; height: 6px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #2563eb; border-radius: 4px; transition: width 0.2s; width: 0; }
+    .progress-label { font-size: 0.78rem; color: #64748b; margin-top: 0.25rem; }
+
+    /* Find by Ingredient modal */
+    .fbi-modal { max-width: 620px; }
+    .fbi-search { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; outline: none; margin-bottom: 0.6rem; }
+    .fbi-search:focus { border-color: #3b82f6; }
+    .fbi-mode-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; font-size: 0.85rem; color: #374151; }
+    .fbi-mode-row label { display: flex; align-items: center; gap: 0.3rem; cursor: pointer; }
+    .fbi-ing-list { max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.35rem 0.5rem; margin-bottom: 1rem; }
+    .fbi-ing-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; font-size: 0.88rem; cursor: pointer; }
+    .fbi-ing-item input { width: 1rem; height: 1rem; accent-color: #2563eb; cursor: pointer; flex-shrink: 0; }
+    .fbi-ing-item.hidden { display: none; }
+    .fbi-divider { border: none; border-top: 1px solid #e2e8f0; margin: 0.75rem 0; }
+    .fbi-results-header { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.5rem; }
+    .fbi-results { display: flex; flex-direction: column; gap: 0.35rem; max-height: 240px; overflow-y: auto; }
+    .fbi-result { background: #f8fafc; border-radius: 8px; padding: 0.5rem 0.75rem; }
+    .fbi-result-name { font-size: 0.92rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.25rem; }
+    .fbi-result-ings { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+    .fbi-ing-tag { font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 20px; background: #dbeafe; color: #1e40af; font-weight: 600; }
+    .fbi-ing-tag.matched { background: #dcfce7; color: #166534; }
+    .fbi-empty { font-size: 0.88rem; color: #94a3b8; text-align: center; padding: 1rem; }
+    .fbi-select-prompt { font-size: 0.88rem; color: #94a3b8; text-align: center; padding: 0.75rem; }
+
+    /* Confirm dialog */
+    .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; display: none; align-items: center; justify-content: center; }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box { background: #fff; border-radius: 12px; padding: 1.5rem; max-width: 340px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); margin: 1rem; }
+    .confirm-box p { margin-bottom: 1.25rem; color: #374151; }
+    .confirm-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+
+    .toast { position: fixed; bottom: 1.25rem; right: 1.25rem; background: #1e293b; color: #fff; padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.875rem; z-index: 500; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Recipes</h1>
+    <span id="envBadge" class="badge">LOCAL</span>
+    <button class="header-btn" onclick="openFindByIngredient()">Find by Ingredient</button>
+    <button class="header-btn" onclick="window.location.href='planner.html'">Planner</button>
+    <button class="header-btn" onclick="window.location.href='shopping.html'">Shopping</button>
+    <button class="header-btn" id="logoutBtn">Logout</button>
+  </header>
+
+  <div class="main">
+    <div class="page-title">
+      Recipes
+      <button class="btn btn-primary btn-sm" onclick="openDishModal(null)">+ New Recipe</button>
+    </div>
+    <input type="search" id="recipeSearch" placeholder="Search recipes…"
+      oninput="renderDishes()"
+      style="width:100%; padding:0.5rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.9rem; outline:none; margin-bottom:0.75rem; background:#fff;"
+      onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#d1d5db'" />
+
+    <div id="dishesGrid" class="dishes-grid">
+      <div class="empty-state">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Dish add/edit modal -->
+  <div id="dishModal" class="modal-overlay">
+    <div class="modal">
+      <h3 id="dishModalTitle">New Recipe</h3>
+      <div class="form-row">
+        <label>Dish Name</label>
+        <input type="text" id="dishName" placeholder="e.g. Spaghetti Carbonara" />
+      </div>
+      <div class="form-row">
+        <label>Ingredients</label>
+        <table class="ing-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th class="ing-qty">Qty</th>
+              <th class="ing-unit">Unit</th>
+              <th>Store</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="ingTableBody"></tbody>
+        </table>
+        <button class="add-ing-btn" onclick="addIngredientRow()">+ Add ingredient</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeDishModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveDish()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipe add/edit modal -->
+  <div id="recipeModal" class="modal-overlay">
+    <div class="modal">
+      <h3 id="recipeModalTitle">Recipe</h3>
+
+      <div class="recipe-type-toggle">
+        <button class="recipe-type-btn active" id="btnTypeUrl" onclick="setRecipeType('url')">URL</button>
+        <button class="recipe-type-btn" id="btnTypeFile" onclick="setRecipeType('file')">File (PDF / Image)</button>
+      </div>
+
+      <!-- URL panel -->
+      <div id="panelUrl" class="recipe-panel active">
+        <div class="form-row">
+          <label>Recipe URL</label>
+          <input type="url" id="recipeUrlInput" placeholder="https://..." />
+        </div>
+      </div>
+
+      <!-- File panel -->
+      <div id="panelFile" class="recipe-panel">
+        <div id="currentFileInfo" style="display:none" class="file-current">
+          <span class="file-icon" id="currentFileIcon">📄</span>
+          <span class="file-name" id="currentFileName"></span>
+          <span class="file-date" id="currentFileDate"></span>
+        </div>
+        <div class="form-row">
+          <label id="fileInputLabel">Upload file</label>
+          <input type="file" id="recipeFileInput" accept="image/*,application/pdf" />
+        </div>
+        <div id="uploadProgress" class="upload-progress" style="display:none">
+          <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+          <div class="progress-label" id="progressLabel">Uploading…</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-danger btn-sm" id="removeRecipeBtn" onclick="removeRecipe()" style="display:none; margin-right:auto">Remove Recipe</button>
+        <button class="btn btn-secondary" onclick="closeRecipeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveRecipe()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Find by Ingredient modal -->
+  <div id="fbiModal" class="modal-overlay">
+    <div class="modal fbi-modal">
+      <h3>Find by Ingredient</h3>
+
+      <input type="search" class="fbi-search" id="fbiSearch" placeholder="Search ingredients…" oninput="filterFbiIngredients()" />
+
+      <div class="fbi-mode-row">
+        Show recipes containing:
+        <label><input type="radio" name="fbiMode" value="any" checked onchange="renderFbiResults()" /> Any selected</label>
+        <label><input type="radio" name="fbiMode" value="all" onchange="renderFbiResults()" /> All selected</label>
+      </div>
+
+      <div id="fbiIngList" class="fbi-ing-list"></div>
+
+      <hr class="fbi-divider" />
+
+      <div class="fbi-results-header" id="fbiResultsHeader">Matching recipes</div>
+      <div id="fbiResults" class="fbi-results">
+        <div class="fbi-select-prompt">Select ingredients above to find recipes.</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary btn-sm" onclick="clearFbiSelection()">Clear</button>
+        <button class="btn btn-primary" onclick="closeFbiModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <div id="confirmOverlay" class="confirm-overlay">
+    <div class="confirm-box">
+      <p id="confirmMsg"></p>
+      <div class="confirm-actions">
+        <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+        <button class="btn btn-danger" id="confirmOkBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="./config.js"></script>
+  <script src="./apiClient.js"></script>
+  <script src="./recipes.js"></script>
+</body>
+</html>

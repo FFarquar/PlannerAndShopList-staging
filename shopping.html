@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopping List</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" href="./favicon.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; color: #1e293b; min-height: 100vh; }
+
+    .app-header {
+      background: #1e3a5f; color: #fff;
+      padding: 0.75rem 1.25rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .app-header h1 { font-size: 1rem; }
+    .header-sub { font-size: 0.8rem; color: rgba(255,255,255,0.7); flex: 1; }
+    .badge { font-size: 0.65rem; font-weight: 700; padding: 0.2rem 0.45rem; border-radius: 4px; background: #fef3c7; color: #92400e; }
+    .badge.staging { background: #dbeafe; color: #1e40af; }
+    .badge.production { background: #dcfce7; color: #166534; }
+    .header-btn { background: none; border: 1px solid rgba(255,255,255,0.4); color: #fff; padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+    .header-btn:hover { background: rgba(255,255,255,0.1); }
+
+    .main { padding: 1.25rem; max-width: 700px; margin: 0 auto; }
+
+    .toolbar { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center; }
+    .btn { padding: 0.5rem 1rem; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: background 0.15s; }
+    .btn-primary { background: #1e3a5f; color: #fff; }
+    .btn-primary:hover { background: #2d5a8e; }
+    .btn-secondary { background: #e2e8f0; color: #1e293b; }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.8rem; }
+    .btn-danger { background: #fee2e2; color: #b91c1c; }
+    .btn-danger:hover { background: #fecaca; }
+
+    /* Add item form */
+    .add-form { background: #fff; border-radius: 10px; padding: 1rem; margin-bottom: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,0.07); display: none; }
+    .add-form.open { display: block; }
+    .add-form h3 { font-size: 0.9rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.75rem; }
+    .add-form-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end; }
+    .add-form input, .add-form select {
+      padding: 0.45rem 0.65rem; border: 1px solid #d1d5db; border-radius: 7px; font-size: 0.875rem; outline: none;
+    }
+    .add-form input:focus, .add-form select:focus { border-color: #3b82f6; }
+    .add-form .f-name { flex: 2; min-width: 120px; }
+    .add-form .f-qty { width: 70px; }
+    .add-form .f-unit { width: 70px; }
+    .add-form .f-store { flex: 1; min-width: 110px; }
+
+    /* Store sections */
+    .store-section { margin-bottom: 1.25rem; }
+    .store-header {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: #1e3a5f; color: #fff;
+      padding: 0.6rem 1rem; border-radius: 8px 8px 0 0; cursor: pointer;
+    }
+    .store-header h2 { font-size: 0.95rem; flex: 1; }
+    .store-header .count { font-size: 0.75rem; opacity: 0.75; }
+    .store-header .chevron { font-size: 0.8rem; transition: transform 0.2s; }
+    .store-section.collapsed .chevron { transform: rotate(-90deg); }
+    .store-items { border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; background: #fff; overflow: hidden; }
+    .store-section.collapsed .store-items { display: none; }
+
+    /* Shopping item row */
+    .shop-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.7rem 1rem; border-bottom: 1px solid #f1f5f9;
+      transition: background 0.1s;
+    }
+    .shop-item:last-child { border-bottom: none; }
+    .shop-item.purchased { background: #f8fafc; }
+    .shop-item.purchased .item-label { text-decoration: line-through; color: #94a3b8; }
+    .item-check { width: 1.1rem; height: 1.1rem; cursor: pointer; accent-color: #2563eb; flex-shrink: 0; }
+    .item-label { flex: 1; font-size: 0.9rem; }
+    .item-qty { font-size: 0.82rem; color: #64748b; white-space: nowrap; }
+    .item-store-select {
+      border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.25rem 0.4rem;
+      font-size: 0.78rem; color: #374151; background: #f8fafc; outline: none; cursor: pointer;
+    }
+    .item-store-select:focus { border-color: #3b82f6; }
+    .item-del { background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 1rem; padding: 0 0.2rem; flex-shrink: 0; }
+    .item-del:hover { color: #ef4444; }
+
+    .empty-state { text-align: center; padding: 2.5rem 1rem; color: #94a3b8; font-size: 0.9rem; }
+
+    .toast { position: fixed; bottom: 1.25rem; right: 1.25rem; background: #1e293b; color: #fff; padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.875rem; z-index: 500; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
+    /* Stores modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 12px; padding: 1.75rem; width: 100%; max-width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    .modal h3 { font-size: 1.1rem; margin-bottom: 1rem; color: #1e3a5f; }
+    .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
+    .stores-list { margin-bottom: 1rem; max-height: 180px; overflow-y: auto; }
+    .stores-list-item { padding: 0.45rem 0; font-size: 0.9rem; border-bottom: 1px solid #f1f5f9; color: #374151; }
+    .stores-list-item:last-child { border-bottom: none; }
+    .stores-list-empty { font-size: 0.85rem; color: #94a3b8; padding: 0.5rem 0; }
+    .stores-add-row { display: flex; gap: 0.5rem; align-items: center; }
+    .stores-add-row input { flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; outline: none; }
+    .stores-add-row input:focus { border-color: #3b82f6; }
+
+    .plan-info { font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Shopping List</h1>
+    <span id="planTitle" class="header-sub"></span>
+    <span id="envBadge" class="badge">LOCAL</span>
+    <button class="header-btn" onclick="openStoresModal()">Stores</button>
+    <button class="header-btn" onclick="window.location.href='recipes.html'">Recipes</button>
+    <button class="header-btn" onclick="window.location.href='planner.html'">← Planner</button>
+  </header>
+
+  <div class="main">
+    <div id="planInfo" class="plan-info"></div>
+
+    <div class="toolbar">
+      <button class="btn btn-primary btn-sm" onclick="toggleAddForm()">+ Add Item</button>
+      <button class="btn btn-secondary btn-sm" onclick="refreshFromPlan()">↻ Refresh from Meal Plan</button>
+    </div>
+
+    <!-- Add manual item form -->
+    <div id="addForm" class="add-form">
+      <h3>Add Item Manually</h3>
+      <div class="add-form-row">
+        <input type="text" id="addName" class="f-name" placeholder="Item name" />
+        <input type="number" id="addQty" class="f-qty" placeholder="Qty" min="0" step="any" />
+        <input type="text" id="addUnit" class="f-unit" placeholder="Unit" />
+        <select id="addStore" class="f-store"><option value="">— Store —</option></select>
+        <button class="btn btn-primary btn-sm" onclick="addManualItem()">Add</button>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAddForm()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Shopping list sections by store -->
+    <div id="shoppingList"></div>
+  </div>
+
+  <!-- Stores modal -->
+  <div id="storesModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Stores</h3>
+      <div id="storesList" class="stores-list"></div>
+      <div class="stores-add-row">
+        <input type="text" id="newStoreName" placeholder="New store name" onkeydown="if(event.key==='Enter')addStoreFromModal()" />
+        <button class="btn btn-primary btn-sm" onclick="addStoreFromModal()">Add</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeStoresModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="./config.js"></script>
+  <script src="./apiClient.js"></script>
+  <script src="./shopping.js"></script>
+</body>
+</html>

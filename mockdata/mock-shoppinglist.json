@@ -1,0 +1,18 @@
+{
+  "mealPlan": {
+    "mealPlanId": "plan-1",
+    "name": "Week of 30 June",
+    "startDate": "2026-06-30",
+    "endDate": "2026-07-06"
+  },
+  "items": [
+    { "itemId": "si-1", "name": "Mince", "totalQuantity": 500, "unit": "g", "store": "Butcher", "purchased": false, "source": "meal" },
+    { "itemId": "si-2", "name": "Whole Chicken", "totalQuantity": 1, "unit": "", "store": "Butcher", "purchased": false, "source": "meal" },
+    { "itemId": "si-3", "name": "Pasta Sauce", "totalQuantity": 1, "unit": "jar", "store": "Coles", "purchased": false, "source": "meal" },
+    { "itemId": "si-4", "name": "Lasagna Sheets", "totalQuantity": 1, "unit": "pack", "store": "Coles", "purchased": false, "source": "meal" },
+    { "itemId": "si-5", "name": "Mozzarella", "totalQuantity": 200, "unit": "g", "store": "Coles", "purchased": true, "source": "meal" },
+    { "itemId": "si-6", "name": "Potatoes", "totalQuantity": 1, "unit": "kg", "store": "Fruit Market", "purchased": false, "source": "meal" },
+    { "itemId": "si-7", "name": "Carrots", "totalQuantity": 500, "unit": "g", "store": "Fruit Market", "purchased": false, "source": "meal" },
+    { "itemId": "si-8", "name": "Milk", "totalQuantity": 2, "unit": "L", "store": "Coles", "purchased": false, "source": "manual" }
+  ]
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "dishId": "dish-1",
+    "name": "Lasagna",
+    "recipeUrl": "https://www.recipetineats.com/lasagna/",
+    "ingredients": [
+      { "id": "ing-1a", "name": "Mince", "quantity": 500, "unit": "g", "defaultStore": "Butcher" },
+      { "id": "ing-1b", "name": "Pasta Sauce", "quantity": 1, "unit": "jar", "defaultStore": "Coles" },
+      { "id": "ing-1c", "name": "Lasagna Sheets", "quantity": 1, "unit": "pack", "defaultStore": "Coles" },
+      { "id": "ing-1d", "name": "Tinned Tomatoes", "quantity": 2, "unit": "tin", "defaultStore": "Coles" },
+      { "id": "ing-1e", "name": "Mozzarella", "quantity": 200, "unit": "g", "defaultStore": "Coles" }
+    ]
+  },
+  {
+    "dishId": "dish-2",
+    "name": "Bolognese",
+    "ingredients": [
+      { "id": "ing-2a", "name": "Mince", "quantity": 500, "unit": "g", "defaultStore": "Butcher" },
+      { "id": "ing-2b", "name": "Tinned Tomatoes", "quantity": 2, "unit": "tin", "defaultStore": "Coles" },
+      { "id": "ing-2c", "name": "Pasta", "quantity": 500, "unit": "g", "defaultStore": "Coles" },
+      { "id": "ing-2d", "name": "Onion", "quantity": 1, "unit": "", "defaultStore": "Fruit Market" }
+    ]
+  },
+  {
+    "dishId": "dish-3",
+    "name": "Roast Chicken",
+    "recipeAttachment": {
+      "s3Key": "recipes/dish-3/recipe.pdf",
+      "fileName": "roast-chicken.pdf",
+      "fileType": "application/pdf",
+      "uploadedDate": "2026-06-01T10:00:00.000Z"
+    },
+    "ingredients": [
+      { "id": "ing-3a", "name": "Whole Chicken", "quantity": 1, "unit": "", "defaultStore": "Butcher" },
+      { "id": "ing-3b", "name": "Potatoes", "quantity": 1, "unit": "kg", "defaultStore": "Fruit Market" },
+      { "id": "ing-3c", "name": "Carrots", "quantity": 500, "unit": "g", "defaultStore": "Fruit Market" },
+      { "id": "ing-3d", "name": "Olive Oil", "quantity": 1, "unit": "bottle", "defaultStore": "Coles" }
+    ]
+  },
+  {
+    "dishId": "dish-4",
+    "name": "Beef Wellington",
+    "ingredients": [
+      { "id": "ing-4a", "name": "Beef Tenderloin", "quantity": 800, "unit": "g", "defaultStore": "Butcher" },
+      { "id": "ing-4b", "name": "Puff Pastry", "quantity": 1, "unit": "sheet", "defaultStore": "Coles" },
+      { "id": "ing-4c", "name": "Mushrooms", "quantity": 300, "unit": "g", "defaultStore": "Fruit Market" },
+      { "id": "ing-4d", "name": "Prosciutto", "quantity": 100, "unit": "g", "defaultStore": "Coles" }
+    ]
+  }
+]
