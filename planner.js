@@ -247,7 +247,9 @@ async function submitPlanModal() {
       plansCache.unshift(newPlan);
       renderPlansGrid(plansCache);
       if (copySourceId) {
+        // Copy completes before openPlan so meals are in DynamoDB when the grid loads
         await copyMealsToNewPlan(copySourceId, newPlan.mealPlanId, startDate, endDate);
+        openPlan(newPlan.mealPlanId);
       } else {
         showToast('Meal plan created');
       }
@@ -271,22 +273,37 @@ async function copyMealsToNewPlan(sourceId, targetId, targetStart, targetEnd) {
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    const copies = [];
+    const copyTasks = [];
     for (const meal of meals) {
       if (!meal.date || !meal.mealTime || !(meal.dishes || []).length) continue;
       const dow = new Date(meal.date + 'T00:00:00').getDay();
       if (dowToDate[dow] === undefined) continue;
       const newDate = dowToDate[dow];
-      mockPersistDayMeal(targetId, newDate, meal.mealTime, meal.dishes);
-      copies.push(
-        apiPut(`/mealplans/${targetId}/daymeals/${newDate}/${meal.mealTime}`, { dishes: meal.dishes })
-      );
+      mockPersistDayMeal(targetId, newDate, meal.mealTime, meal.dishes, meal.eatingOut || false);
+      copyTasks.push({ newDate, mealTime: meal.mealTime, dishes: meal.dishes });
     }
 
-    await Promise.all(copies);
-    showToast(`Meal plan created — ${copies.length} meal${copies.length !== 1 ? 's' : ''} copied`);
+    // Run sequentially so a single failure doesn't abort the rest
+    let succeeded = 0;
+    let failed = 0;
+    for (const task of copyTasks) {
+      try {
+        await apiPut(`/mealplans/${targetId}/daymeals/${task.newDate}/${task.mealTime}`, { dishes: task.dishes });
+        succeeded++;
+      } catch (err) {
+        console.error(`Failed to copy ${task.mealTime} on ${task.newDate}:`, err.message);
+        failed++;
+      }
+    }
+
+    if (failed > 0) {
+      showToast(`${succeeded} meal${succeeded !== 1 ? 's' : ''} copied, ${failed} failed`);
+    } else {
+      showToast(`Meal plan created — ${succeeded} meal${succeeded !== 1 ? 's' : ''} copied`);
+    }
   } catch (err) {
-    showToast('Plan created but meals could not be copied');
+    console.error('Copy meals error:', err);
+    showToast('Plan created but meals could not be copied: ' + err.message);
   }
 }
 
