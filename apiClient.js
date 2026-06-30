@@ -18,62 +18,94 @@ function handleAuthError(res) {
   return false;
 }
 
+let _loadingCount = 0;
+function _showLoading() {
+  _loadingCount++;
+  document.getElementById('loadingOverlay')?.classList.add('active');
+}
+function _hideLoading() {
+  if (--_loadingCount <= 0) {
+    _loadingCount = 0;
+    document.getElementById('loadingOverlay')?.classList.remove('active');
+  }
+}
+
 async function apiGet(endpoint, mockFile) {
   if (USE_MOCK && mockFile) {
     const res = await fetch(`./mockdata/${mockFile}`);
     return res.json();
   }
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, { headers: authHeaders() });
-  if (handleAuthError(res)) return null;
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `Request failed: ${res.status}`);
+  _showLoading();
+  try {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, { headers: authHeaders() });
+    if (handleAuthError(res)) return null;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Request failed: ${res.status}`);
+    }
+    return res.json();
+  } finally {
+    _hideLoading();
   }
-  return res.json();
 }
 
 async function apiPost(endpoint, body) {
   if (USE_MOCK) return { success: true, _mock: true, ...body, id: crypto.randomUUID() };
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify(body),
-  });
-  if (handleAuthError(res)) return null;
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `Request failed: ${res.status}`);
+  _showLoading();
+  try {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (handleAuthError(res)) return null;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Request failed: ${res.status}`);
+    }
+    return res.json();
+  } finally {
+    _hideLoading();
   }
-  return res.json();
 }
 
 async function apiPut(endpoint, body) {
   if (USE_MOCK) return { success: true, _mock: true, ...body };
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'PUT',
-    headers: authHeaders(),
-    body: JSON.stringify(body),
-  });
-  if (handleAuthError(res)) return null;
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `Request failed: ${res.status}`);
+  _showLoading();
+  try {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (handleAuthError(res)) return null;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Request failed: ${res.status}`);
+    }
+    return res.json();
+  } finally {
+    _hideLoading();
   }
-  return res.json();
 }
 
 async function apiDelete(endpoint) {
   if (USE_MOCK) return { success: true, _mock: true };
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  });
-  if (handleAuthError(res)) return null;
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `Request failed: ${res.status}`);
+  _showLoading();
+  try {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (handleAuthError(res)) return null;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Request failed: ${res.status}`);
+    }
+    return res.json();
+  } finally {
+    _hideLoading();
   }
-  return res.json();
 }
 
 async function apiGetRecipeUploadUrl(dishId, fileName, fileType) {
