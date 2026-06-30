@@ -201,6 +201,12 @@
     <div class="modal">
       <h3 id="recipeModalTitle">Recipe</h3>
 
+      <div class="form-row">
+        <label>Recipe Name</label>
+        <input type="text" id="recipeNameInput" placeholder="Recipe name"
+               oninput="document.getElementById('recipeModalTitle').textContent = 'Recipe — ' + (this.value.trim() || '…')" />
+      </div>
+
       <div class="recipe-type-toggle">
         <button class="recipe-type-btn active" id="btnTypeUrl" onclick="setRecipeType('url')">URL</button>
         <button class="recipe-type-btn" id="btnTypeFile" onclick="setRecipeType('file')">File (PDF / Image)</button>

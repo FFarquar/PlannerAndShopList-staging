@@ -126,6 +126,7 @@ function openRecipeModal(dishId) {
   editingRecipeDish = dish;
 
   document.getElementById('recipeModalTitle').textContent = `Recipe — ${dish.name}`;
+  document.getElementById('recipeNameInput').value = dish.name;
   document.getElementById('recipeUrlInput').value = dish.recipeUrl || '';
   document.getElementById('recipeFileInput').value = '';
   document.getElementById('uploadProgress').style.display = 'none';
@@ -173,6 +174,8 @@ function setRecipeType(type) {
 async function saveRecipe() {
   if (!editingRecipeDish) return;
   const dishId = editingRecipeDish.dishId;
+  const newName = document.getElementById('recipeNameInput').value.trim();
+  if (!newName) { showToast('Recipe name is required'); return; }
 
   try {
     if (recipeType === 'url') {
@@ -181,50 +184,59 @@ async function saveRecipe() {
         showToast('Please enter a URL');
         return;
       }
-      await apiPut(`/dishes/${dishId}`, { recipeUrl: url, recipeAttachment: null });
+      await apiPut(`/dishes/${dishId}`, { name: newName, recipeUrl: url, recipeAttachment: null });
       const dish = allDishes.find(d => d.dishId === dishId);
-      if (dish) { dish.recipeUrl = url; delete dish.recipeAttachment; }
+      if (dish) { dish.name = newName; dish.recipeUrl = url; delete dish.recipeAttachment; }
 
     } else {
       let file = document.getElementById('recipeFileInput').files[0];
-      if (!file) {
+      if (!file && !editingRecipeDish.recipeAttachment?.s3Key) {
         showToast('Please select a file');
         return;
       }
 
-      showUploadProgress(0, 'Preparing…');
+      if (file) {
+        showUploadProgress(0, 'Preparing…');
 
-      if (file.type.startsWith('image/')) {
-        showUploadProgress(10, 'Compressing image…');
-        file = await compressImage(file);
+        if (file.type.startsWith('image/')) {
+          showUploadProgress(10, 'Compressing image…');
+          file = await compressImage(file);
+        }
+
+        showUploadProgress(20, 'Getting upload URL…');
+
+        const urlResult = await apiGetRecipeUploadUrl(dishId, file.name, file.type);
+
+        if (!urlResult._mock) {
+          showUploadProgress(40, 'Uploading…');
+          await apiUploadToS3(urlResult.uploadUrl, file);
+          showUploadProgress(80, 'Saving…');
+        }
+
+        const attachment = {
+          s3Key: urlResult.s3Key,
+          fileName: file.name,
+          fileType: file.type,
+        };
+
+        await apiPut(`/dishes/${dishId}`, { name: newName, recipeAttachment: attachment, recipeUrl: null });
+        const dish = allDishes.find(d => d.dishId === dishId);
+        if (dish) {
+          dish.name = newName;
+          dish.recipeAttachment = { ...attachment, uploadedDate: new Date().toISOString() };
+          delete dish.recipeUrl;
+        }
+
+        showUploadProgress(100, 'Done');
+      } else {
+        // No new file — only the name changed
+        await apiPut(`/dishes/${dishId}`, { name: newName });
+        const dish = allDishes.find(d => d.dishId === dishId);
+        if (dish) dish.name = newName;
       }
-
-      showUploadProgress(20, 'Getting upload URL…');
-
-      const urlResult = await apiGetRecipeUploadUrl(dishId, file.name, file.type);
-
-      if (!urlResult._mock) {
-        showUploadProgress(40, 'Uploading…');
-        await apiUploadToS3(urlResult.uploadUrl, file);
-        showUploadProgress(80, 'Saving…');
-      }
-
-      const attachment = {
-        s3Key: urlResult.s3Key,
-        fileName: file.name,
-        fileType: file.type,
-      };
-
-      await apiPut(`/dishes/${dishId}`, { recipeAttachment: attachment, recipeUrl: null });
-      const dish = allDishes.find(d => d.dishId === dishId);
-      if (dish) {
-        dish.recipeAttachment = { ...attachment, uploadedDate: new Date().toISOString() };
-        delete dish.recipeUrl;
-      }
-
-      showUploadProgress(100, 'Done');
     }
 
+    mockPersistDishes();
     closeRecipeModal();
     renderDishes();
     showToast('Recipe saved');

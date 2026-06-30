@@ -35,7 +35,13 @@ async function loadDishes() {
     localStorage.setItem('mock-dishes', JSON.stringify(data || []));
     return data || [];
   }
-  return apiGet('/dishes', null).catch(() => []);
+  try {
+    return await apiGet('/dishes', null);
+  } catch (err) {
+    console.error('Failed to load dishes:', err);
+    showToast('Could not load recipes — ' + err.message);
+    return [];
+  }
 }
 
 // =====================

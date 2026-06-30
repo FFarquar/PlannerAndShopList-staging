@@ -1,4 +1,4 @@
-const CACHE_NAME = 'planner-v4';
+const CACHE_NAME = 'planner-v5';
 const STATIC_ASSETS = [
   './login.html',
   './planner.html',
