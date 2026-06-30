@@ -1,6 +1,7 @@
 // ─── State ───────────────────────────────────────────────────────────────────
 let allDishes = [];
 let allStores = [];
+let allIngredientSuggestions = [];
 let editingDishId = null;   // null = new dish
 let editingRecipeDish = null; // dish being given a recipe
 let recipeType = 'url';     // 'url' or 'file'
@@ -47,6 +48,7 @@ async function loadData() {
     ]);
     allDishes = dishes || [];
     allStores = (stores || []).map(s => s.name || s);
+    buildIngredientSuggestions();
     renderDishes();
   } catch (err) {
     showToast('Failed to load data: ' + err.message);
@@ -284,6 +286,67 @@ function closeDishModal() {
   editingDishId = null;
 }
 
+// ─── Ingredient autocomplete ──────────────────────────────────────────────────
+function buildIngredientSuggestions() {
+  const seen = new Map();
+  const completeness = ing => (ing.quantity ? 1 : 0) + (ing.unit ? 1 : 0) + (ing.defaultStore ? 1 : 0);
+  for (const d of allDishes) {
+    for (const ing of (d.ingredients || [])) {
+      const key = (ing.name || '').toLowerCase().trim();
+      if (!key) continue;
+      const candidate = { name: ing.name, quantity: ing.quantity, unit: ing.unit, defaultStore: ing.defaultStore };
+      const existing = seen.get(key);
+      if (!existing || completeness(candidate) > completeness(existing)) seen.set(key, candidate);
+    }
+  }
+  allIngredientSuggestions = [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function getIngredientMatches(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return allIngredientSuggestions.slice(0, 8);
+  const starts = [], contains = [];
+  for (const s of allIngredientSuggestions) {
+    const n = s.name.toLowerCase();
+    if (n.startsWith(q)) starts.push(s);
+    else if (n.includes(q)) contains.push(s);
+  }
+  return [...starts, ...contains].slice(0, 8);
+}
+
+function wireIngredientAutocomplete(tr, nameInput, dropdown) {
+  function showSuggestions() {
+    const matches = getIngredientMatches(nameInput.value);
+    if (!matches.length) { dropdown.classList.remove('open'); return; }
+    dropdown.innerHTML = matches.map(s => {
+      const qtyUnit = s.quantity
+        ? (/^\d/.test(s.unit || '') ? `${s.quantity} × ${s.unit}` : `${s.quantity}${s.unit || ''}`)
+        : s.unit;
+      const sub = [qtyUnit, s.defaultStore].filter(Boolean).join(' · ');
+      return `<div class="ing-suggest-option" data-name="${esc(s.name)}">${esc(s.name)}${sub ? `<span class="ing-suggest-sub">${esc(sub)}</span>` : ''}</div>`;
+    }).join('');
+    dropdown.querySelectorAll('.ing-suggest-option').forEach(opt => {
+      opt.addEventListener('mousedown', e => {
+        e.preventDefault();
+        const selected = allIngredientSuggestions.find(s => s.name === opt.dataset.name);
+        if (!selected) return;
+        nameInput.value = selected.name;
+        const qtyInput = tr.querySelector('.ing-qty');
+        const unitInput = tr.querySelector('.ing-unit');
+        const storeSelect = tr.querySelector('.ing-store');
+        if (!qtyInput.value && selected.quantity) qtyInput.value = selected.quantity;
+        if (!unitInput.value && selected.unit) unitInput.value = selected.unit;
+        if (storeSelect && !storeSelect.value && selected.defaultStore) storeSelect.value = selected.defaultStore;
+        dropdown.classList.remove('open');
+      });
+    });
+    dropdown.classList.add('open');
+  }
+  nameInput.addEventListener('input', showSuggestions);
+  nameInput.addEventListener('focus', showSuggestions);
+  nameInput.addEventListener('blur', () => setTimeout(() => dropdown.classList.remove('open'), 150));
+}
+
 function renderIngTable(ingredients) {
   const tbody = document.getElementById('ingTableBody');
   tbody.innerHTML = '';
@@ -296,13 +359,19 @@ function addIngredientRow(ing) {
   const tr = document.createElement('tr');
   const storeOptions = allStores.map(s => `<option ${ing?.defaultStore === s ? 'selected' : ''}>${s}</option>`).join('');
   tr.innerHTML = `
-    <td><input class="ing-input" placeholder="Name" value="${esc(ing?.name || '')}" /></td>
+    <td><div class="ing-name-wrap">
+      <input class="ing-input" placeholder="Name" value="${esc(ing?.name || '')}" autocomplete="off" />
+      <div class="ing-suggest-dropdown"></div>
+    </div></td>
     <td><input class="ing-input ing-qty" type="number" placeholder="0" value="${ing?.quantity ?? ''}" min="0" step="any" /></td>
     <td><input class="ing-input ing-unit" placeholder="g" value="${esc(ing?.unit || '')}" /></td>
     <td><select class="ing-store"><option value="">— Store —</option>${storeOptions}</select></td>
     <td><button class="ing-del" onclick="this.closest('tr').remove()">✕</button></td>
   `;
   tbody.appendChild(tr);
+  const nameInput = tr.querySelector('.ing-input');
+  const dropdown = tr.querySelector('.ing-suggest-dropdown');
+  wireIngredientAutocomplete(tr, nameInput, dropdown);
 }
 
 async function saveDish() {
@@ -333,6 +402,7 @@ async function saveDish() {
       }
     }
     mockPersistDishes();
+    buildIngredientSuggestions();
     closeDishModal();
     renderDishes();
     showToast(editingDishId ? 'Dish updated' : 'Dish created');

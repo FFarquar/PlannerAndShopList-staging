@@ -835,7 +835,9 @@ async function saveSlot() {
     const result = await apiPut(`/mealplans/${currentPlanId}/daymeals/${currentDate}/${currentMealTime}`, payload);
     if (result) {
       const sk = `DAYMEAL#${currentDate}#${currentMealTime}`;
-      currentDayMeals[sk] = result._mock ? { SK: sk, date: currentDate, mealTime: currentMealTime, dishes, eatingOut: currentSlotEatingOut } : result;
+      currentDayMeals[sk] = result._mock
+        ? { SK: sk, date: currentDate, mealTime: currentMealTime, dishes, eatingOut: currentSlotEatingOut }
+        : { ...result, eatingOut: currentSlotEatingOut };
       mockPersistDayMeal(currentPlanId, currentDate, currentMealTime, dishes, currentSlotEatingOut);
       showToast('Slot saved');
       showView('planDetail');

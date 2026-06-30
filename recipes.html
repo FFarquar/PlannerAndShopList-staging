@@ -90,6 +90,14 @@
     .add-ing-btn { background: none; border: 1px dashed #94a3b8; color: #64748b; border-radius: 6px; padding: 0.3rem 0.65rem; cursor: pointer; font-size: 0.8rem; }
     .add-ing-btn:hover { background: #f8fafc; }
 
+    /* Ingredient name autocomplete */
+    .ing-name-wrap { position: relative; }
+    .ing-suggest-dropdown { position: absolute; top: 100%; left: 0; min-width: 200px; background: #fff; border: 1px solid #d1d5db; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); z-index: 60; max-height: 200px; overflow-y: auto; display: none; }
+    .ing-suggest-dropdown.open { display: block; }
+    .ing-suggest-option { padding: 0.45rem 0.75rem; cursor: pointer; font-size: 0.85rem; }
+    .ing-suggest-option:hover { background: #f0f9ff; }
+    .ing-suggest-sub { font-size: 0.73rem; color: #94a3b8; margin-left: 0.4rem; }
+
     /* Recipe modal */
     .recipe-type-toggle { display: flex; gap: 0; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; }
     .recipe-type-btn { flex: 1; padding: 0.5rem; border: none; cursor: pointer; font-size: 0.88rem; font-weight: 600; background: #f8fafc; color: #64748b; transition: background 0.15s, color 0.15s; }
