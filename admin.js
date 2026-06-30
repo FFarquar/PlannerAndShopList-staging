@@ -1,0 +1,224 @@
+if (!localStorage.getItem('authToken')) {
+  window.location.href = 'login.html';
+}
+if (localStorage.getItem('userRole') !== 'ADMIN') {
+  window.location.href = 'planner.html';
+}
+
+let users = [];
+let editTarget = null;
+let deleteTarget = null;
+let toastTimer;
+
+(async function init() {
+  const env = window.APP_CONFIG?.ENVIRONMENT || 'LOCAL';
+  const badge = document.getElementById('envBadge');
+  badge.textContent = env;
+  if (env === 'STAGING') badge.classList.add('staging');
+  if (env === 'PRODUCTION') badge.classList.add('production');
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.clear();
+    window.location.href = 'login.html';
+  });
+
+  await loadUsers();
+})();
+
+async function loadUsers() {
+  try {
+    if (window.APP_CONFIG?.USE_MOCK) {
+      const res = await fetch('./mockdata/mock-users.json');
+      const raw = await res.json();
+      users = raw.map(u => ({ ...u, createdDate: u.createdDate || null }));
+    } else {
+      users = await apiGet('/admin/users');
+    }
+    renderTable();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function renderTable() {
+  const tbody = document.getElementById('usersTableBody');
+  if (!users || !users.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No users found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><strong>${escHtml(u.loginID)}</strong></td>
+      <td><span class="role-badge ${u.role}">${u.role}</span></td>
+      <td><span class="status-wrap"><span class="status-dot ${u.active ? 'active' : 'inactive'}"></span>${u.active ? 'Active' : 'Inactive'}</span></td>
+      <td class="td-date">${u.createdDate ? fmtDate(u.createdDate) : '—'}</td>
+      <td class="td-actions">
+        <button class="btn btn-secondary btn-sm" onclick="showEditModal('${escHtml(u.loginID)}')">Edit</button>
+        <button class="btn btn-secondary btn-sm" onclick="showPasswordModal('${escHtml(u.loginID)}')">Password</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete('${escHtml(u.loginID)}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ── Create ────────────────────────────────────────────────
+
+function showCreateModal() {
+  document.getElementById('createLoginID').value = '';
+  document.getElementById('createPassword').value = '';
+  document.getElementById('createRole').value = 'USER';
+  document.getElementById('createError').textContent = '';
+  document.getElementById('createModal').classList.add('open');
+}
+
+function closeCreateModal() {
+  document.getElementById('createModal').classList.remove('open');
+}
+
+async function submitCreateUser() {
+  const loginID = document.getElementById('createLoginID').value.trim();
+  const password = document.getElementById('createPassword').value;
+  const role = document.getElementById('createRole').value;
+  const errorEl = document.getElementById('createError');
+  errorEl.textContent = '';
+
+  if (!loginID || !password) {
+    errorEl.textContent = 'Username and password are required';
+    return;
+  }
+
+  try {
+    if (window.APP_CONFIG?.USE_MOCK) {
+      if (users.find(u => u.loginID === loginID)) throw new Error('User already exists');
+      users.push({ loginID, role, active: true, createdDate: new Date().toISOString() });
+    } else {
+      const newUser = await apiPost('/admin/users', { loginID, password, role });
+      if (newUser) users.push(newUser);
+    }
+    renderTable();
+    closeCreateModal();
+    showToast('User created');
+  } catch (err) {
+    errorEl.textContent = err.message;
+  }
+}
+
+// ── Edit ──────────────────────────────────────────────────
+
+function showEditModal(loginID) {
+  const user = users.find(u => u.loginID === loginID);
+  if (!user) return;
+  editTarget = loginID;
+  document.getElementById('editModalTitle').textContent = `Edit: ${loginID}`;
+  document.getElementById('editRole').value = user.role;
+  document.getElementById('editActive').checked = user.active;
+  document.getElementById('editError').textContent = '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editTarget = null;
+}
+
+async function submitEditUser() {
+  const role = document.getElementById('editRole').value;
+  const active = document.getElementById('editActive').checked;
+  const errorEl = document.getElementById('editError');
+  errorEl.textContent = '';
+
+  try {
+    if (!window.APP_CONFIG?.USE_MOCK) {
+      await apiPut(`/admin/users/${editTarget}`, { role, active });
+    }
+    const idx = users.findIndex(u => u.loginID === editTarget);
+    if (idx >= 0) users[idx] = { ...users[idx], role, active };
+    renderTable();
+    closeEditModal();
+    showToast('User updated');
+  } catch (err) {
+    errorEl.textContent = err.message;
+  }
+}
+
+// ── Password ──────────────────────────────────────────────
+
+function showPasswordModal(loginID) {
+  editTarget = loginID;
+  document.getElementById('passwordModalTitle').textContent = `Reset Password: ${loginID}`;
+  document.getElementById('newPassword').value = '';
+  document.getElementById('passwordError').textContent = '';
+  document.getElementById('passwordModal').classList.add('open');
+}
+
+function closePasswordModal() {
+  document.getElementById('passwordModal').classList.remove('open');
+  editTarget = null;
+}
+
+async function submitResetPassword() {
+  const password = document.getElementById('newPassword').value;
+  const errorEl = document.getElementById('passwordError');
+  errorEl.textContent = '';
+
+  if (!password) {
+    errorEl.textContent = 'Password is required';
+    return;
+  }
+
+  try {
+    if (!window.APP_CONFIG?.USE_MOCK) {
+      await apiPut(`/admin/users/${editTarget}/password`, { password });
+    }
+    closePasswordModal();
+    showToast('Password updated');
+  } catch (err) {
+    errorEl.textContent = err.message;
+  }
+}
+
+// ── Delete ────────────────────────────────────────────────
+
+function confirmDelete(loginID) {
+  deleteTarget = loginID;
+  document.getElementById('confirmMsg').textContent = `Delete user "${loginID}"? This cannot be undone.`;
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  deleteTarget = null;
+}
+
+async function doDelete() {
+  try {
+    if (!window.APP_CONFIG?.USE_MOCK) {
+      await apiDelete(`/admin/users/${deleteTarget}`);
+    }
+    users = users.filter(u => u.loginID !== deleteTarget);
+    renderTable();
+    closeConfirm();
+    showToast('User deleted');
+  } catch (err) {
+    closeConfirm();
+    showToast(err.message, 'error');
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────────
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}

@@ -64,6 +64,10 @@ async function init() {
     window.location.href = 'login.html';
   });
 
+  if (userRole === 'ADMIN') {
+    document.getElementById('adminBtn').style.display = '';
+  }
+
   // Load supporting data and plans in parallel
   const [dishes, stores] = await Promise.all([
     loadDishes(),

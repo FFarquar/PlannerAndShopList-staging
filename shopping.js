@@ -15,16 +15,21 @@ async function init() {
 
   const params = new URLSearchParams(window.location.search);
   planId = params.get('planId');
-  if (!planId) {
-    window.location.href = 'planner.html';
-    return;
-  }
 
   const env = window.APP_CONFIG?.ENVIRONMENT || 'LOCAL';
   const badge = document.getElementById('envBadge');
   badge.textContent = env;
   if (env === 'STAGING') badge.classList.add('staging');
   if (env === 'PRODUCTION') badge.classList.add('production');
+
+  if (localStorage.getItem('userRole') === 'ADMIN') {
+    document.getElementById('adminBtn').style.display = '';
+  }
+
+  if (!planId) {
+    showPlanPicker();
+    return;
+  }
 
   const stores = await apiGet('/stores', 'mock-stores.json').catch(() => []);
   allStores = stores || [];
@@ -511,6 +516,32 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// =====================
+// Plan picker (no planId in URL)
+// =====================
+async function showPlanPicker() {
+  document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('planPicker').style.display = '';
+  const list = document.getElementById('planPickerList');
+  try {
+    const plans = await apiGet('/mealplans', 'mock-mealplans.json');
+    const arr = Array.isArray(plans) ? plans : [];
+    if (!arr.length) {
+      list.innerHTML = '<div style="color:#94a3b8;font-size:0.9rem">No meal plans found. <a href="planner.html" style="color:#3b82f6">Go to Planner</a> to create one.</div>';
+      return;
+    }
+    const fmt = d => new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+    list.innerHTML = arr.map(p => `
+      <div class="plan-picker-card" onclick="window.location.href='shopping.html?planId=${escHtml(p.mealPlanId)}'">
+        <h3>${escHtml(p.name)}</h3>
+        <p class="plan-picker-dates">${fmt(p.startDate)} – ${fmt(p.endDate)}</p>
+      </div>
+    `).join('');
+  } catch (err) {
+    list.innerHTML = `<div style="color:#ef4444;font-size:0.9rem">Could not load plans: ${escHtml(err.message)}</div>`;
+  }
 }
 
 // =====================

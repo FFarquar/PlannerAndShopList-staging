@@ -22,6 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'login.html';
   });
 
+  if (localStorage.getItem('userRole') === 'ADMIN') {
+    document.getElementById('adminBtn').style.display = '';
+  }
+
   loadData();
 });
 
@@ -182,13 +186,15 @@ async function saveRecipe() {
   try {
     if (recipeType === 'url') {
       const url = document.getElementById('recipeUrlInput').value.trim();
-      if (!url) {
-        showToast('Please enter a URL');
-        return;
+      if (url) {
+        await apiPut(`/dishes/${dishId}`, { name: newName, recipeUrl: url, recipeAttachment: null });
+        const dish = allDishes.find(d => d.dishId === dishId);
+        if (dish) { dish.name = newName; dish.recipeUrl = url; delete dish.recipeAttachment; }
+      } else {
+        await apiPut(`/dishes/${dishId}`, { name: newName });
+        const dish = allDishes.find(d => d.dishId === dishId);
+        if (dish) dish.name = newName;
       }
-      await apiPut(`/dishes/${dishId}`, { name: newName, recipeUrl: url, recipeAttachment: null });
-      const dish = allDishes.find(d => d.dishId === dishId);
-      if (dish) { dish.name = newName; dish.recipeUrl = url; delete dish.recipeAttachment; }
 
     } else {
       let file = document.getElementById('recipeFileInput').files[0];

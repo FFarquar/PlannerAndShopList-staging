@@ -104,6 +104,19 @@
     .stores-add-row input:focus { border-color: #3b82f6; }
 
     .plan-info { font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem; }
+
+    /* Plan picker (shown when no planId in URL) */
+    .plan-picker { padding: 1.25rem; max-width: 700px; margin: 0 auto; }
+    .plan-picker h2 { font-size: 1.1rem; font-weight: 700; color: #1e3a5f; margin-bottom: 1rem; }
+    .plan-picker-list { display: grid; gap: 0.75rem; }
+    .plan-picker-card {
+      background: #fff; border-radius: 10px; padding: 1rem 1.25rem;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.08);
+      cursor: pointer; transition: box-shadow 0.15s, transform 0.1s;
+    }
+    .plan-picker-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.13); transform: translateY(-1px); }
+    .plan-picker-card h3 { font-size: 1rem; color: #1e3a5f; margin-bottom: 0.25rem; }
+    .plan-picker-dates { font-size: 0.82rem; color: #64748b; }
   </style>
 </head>
 <body>
@@ -114,9 +127,18 @@
     <button class="header-btn" onclick="openStoresModal()">Stores</button>
     <button class="header-btn" onclick="window.location.href='recipes.html'">Recipes</button>
     <button class="header-btn" onclick="window.location.href='planner.html'">← Planner</button>
+    <button class="header-btn" id="adminBtn" style="display:none" onclick="window.location.href='admin.html'">Admin</button>
   </header>
 
-  <div class="main">
+  <!-- Plan picker (no planId in URL) -->
+  <div id="planPicker" class="plan-picker" style="display:none">
+    <h2>Select a Meal Plan</h2>
+    <div id="planPickerList" class="plan-picker-list">
+      <div style="color:#94a3b8;font-size:0.9rem">Loading…</div>
+    </div>
+  </div>
+
+  <div id="mainContent" class="main">
     <div id="planInfo" class="plan-info"></div>
 
     <div class="toolbar">
@@ -140,6 +162,7 @@
     <!-- Shopping list sections by store -->
     <div id="shoppingList"></div>
   </div>
+  <!-- /mainContent -->
 
   <!-- Stores modal -->
   <div id="storesModal" class="modal-overlay">
