@@ -45,6 +45,29 @@
     .td-actions { display: flex; gap: 0.4rem; }
     .td-date { color: #64748b; font-size: 0.82rem; }
 
+    @media (max-width: 600px) {
+      .table-wrap { background: transparent; box-shadow: none; border-radius: 0; overflow: visible; }
+      table, tbody { display: block; }
+      thead { display: none; }
+      tbody tr {
+        display: block; background: #fff; border-radius: 10px; margin-bottom: 0.75rem;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.08); padding: 0.25rem 0; overflow: hidden;
+      }
+      tbody tr:last-child { margin-bottom: 0; }
+      tbody td {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.55rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.88rem;
+      }
+      tbody td:last-child { border-bottom: none; }
+      tbody td::before {
+        content: attr(data-label);
+        font-size: 0.7rem; font-weight: 700; color: #94a3b8;
+        text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; margin-right: 0.5rem;
+      }
+      .td-actions { justify-content: flex-end; flex-wrap: wrap; }
+      .td-actions::before { display: none; }
+    }
+
     .role-badge { font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; }
     .role-badge.ADMIN { background: #f3e8ff; color: #6b21a8; }
     .role-badge.USER { background: #dbeafe; color: #1e40af; }
@@ -79,6 +102,14 @@
     .toast { position: fixed; bottom: 1.25rem; right: 1.25rem; background: #1e293b; color: #fff; padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.875rem; z-index: 500; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
     .toast.show { opacity: 1; }
     .toast.error { background: #b91c1c; }
+
+    .version-card { background: #fff; border-radius: 10px; padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,0.07); display: flex; flex-wrap: wrap; gap: 1.25rem; }
+    .version-item { display: flex; flex-direction: column; gap: 0.2rem; }
+    .version-label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .version-val { font-family: ui-monospace, monospace; font-size: 0.88rem; color: #1e3a5f; font-weight: 600; }
+    .version-link { font-family: ui-monospace, monospace; font-size: 0.88rem; color: #2563eb; font-weight: 600; text-decoration: none; }
+    .version-link:hover { text-decoration: underline; }
+    .version-hint { width: 100%; font-size: 0.78rem; color: #94a3b8; margin-top: 0.25rem; }
   </style>
 </head>
 <body>
@@ -93,6 +124,22 @@
     <div class="page-title">
       Users
       <button class="btn btn-primary btn-sm" onclick="showCreateModal()">+ New User</button>
+    </div>
+
+    <div class="version-card" id="versionCard">
+      <div class="version-item">
+        <span class="version-label">Build</span>
+        <span class="version-val" id="vBuild">—</span>
+      </div>
+      <div class="version-item">
+        <span class="version-label">Commit</span>
+        <span id="vCommit" class="version-val">—</span>
+      </div>
+      <div class="version-item">
+        <span class="version-label">Browser Cache</span>
+        <span class="version-val" id="vCache">—</span>
+      </div>
+      <p class="version-hint">The build number and browser cache number should match. If they differ, the app update hasn't been applied in this browser yet — try a hard refresh (Ctrl+Shift+R).</p>
     </div>
     <div class="table-wrap">
       <table>

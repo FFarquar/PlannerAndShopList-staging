@@ -204,5 +204,12 @@
   <script src="./config.js"></script>
   <script src="./apiClient.js"></script>
   <script src="./shopping.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data?.type === 'SW_UPDATED') window.location.reload();
+      });
+    }
+  </script>
 </body>
 </html>
