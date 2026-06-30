@@ -174,6 +174,12 @@ function buildStoreSection(store, items) {
   return section;
 }
 
+function formatMealSource(source) {
+  const day = new Date(source.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short' });
+  const meal = source.mealTime ? source.mealTime.charAt(0) + source.mealTime.slice(1).toLowerCase() : '';
+  return `${day}-${meal}`;
+}
+
 function buildItemRow(item) {
   const row = document.createElement('div');
   row.className = `shop-item${item.purchased ? ' purchased' : ''}`;
@@ -187,9 +193,15 @@ function buildItemRow(item) {
     .map(s => `<option value="${escHtml(s)}" ${(item.store || '') === s ? 'selected' : ''}>${escHtml(s || '— none —')}</option>`)
     .join('');
 
+  const sourcesHtml = (item.mealSources && item.mealSources.length)
+    ? `<span class="meal-sources">${[...item.mealSources].sort((a, b) => a.date.localeCompare(b.date)).map(s => escHtml(formatMealSource(s))).join(', ')}</span>`
+    : '';
+
   row.innerHTML = `
     <input type="checkbox" class="item-check" ${item.purchased ? 'checked' : ''} />
-    <span class="item-label">${escHtml(item.name)}</span>
+    <span class="item-info">
+      <span class="item-label">${escHtml(item.name)}</span>${sourcesHtml}
+    </span>
     <span class="item-qty">${escHtml(qtyDisplay)}</span>
     <select class="item-store-select">${storeOptions}</select>
     <button class="item-del" title="Remove item">×</button>
@@ -444,9 +456,12 @@ function aggregateMockDayMeals() {
             store: ing.defaultStore || '',
             purchased: false,
             source: 'meal',
+            mealSources: [],
           });
         }
-        grouped.get(key).totalQuantity += Number(ing.quantity) || 0;
+        const entry = grouped.get(key);
+        entry.totalQuantity += Number(ing.quantity) || 0;
+        entry.mealSources.push({ date: dm.date, mealTime: dm.mealTime });
       }
     }
   }
