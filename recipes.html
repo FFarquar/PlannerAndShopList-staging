@@ -90,19 +90,24 @@
     .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: #3b82f6; }
     .form-row textarea { resize: vertical; font-family: inherit; line-height: 1.5; }
 
+    /* Ingredient section label (replaces form-row wrapper to avoid width:100% cascade) */
+    .ing-section { margin-bottom: 0.85rem; }
+    .ing-section > label { display: block; font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
+
     /* Ingredient cards in dish modal */
     .ing-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
     .ing-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0.6rem; background: #f8fafc; }
     .ing-row1 { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
-    .ing-row2 { display: flex; align-items: center; gap: 0.45rem; }
+    .ing-row2 { display: flex; align-items: center; gap: 0.35rem; flex-wrap: nowrap; }
     .ing-name-wrap { flex: 1; position: relative; }
-    .ing-input { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.3rem 0.45rem; font-size: 0.875rem; background: #fff; outline: none; color: #1e293b; }
+    .ing-input { border: 1px solid #d1d5db; border-radius: 6px; padding: 0.3rem 0.45rem; font-size: 0.875rem; background: #fff; outline: none; color: #1e293b; box-sizing: border-box; }
     .ing-input:focus { border-color: #3b82f6; }
-    .ing-qty { width: 52px; flex-shrink: 0; text-align: center; }
+    .ing-name { width: 100%; }
+    .ing-qty { width: 50px; flex-shrink: 0; text-align: center; }
     .ing-qty::-webkit-outer-spin-button, .ing-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .ing-qty { -moz-appearance: textfield; }
-    .ing-unit-input { width: 68px; flex-shrink: 0; }
-    .ing-store { flex: 1; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.3rem 0.35rem; font-size: 0.8rem; background: #fff; outline: none; color: #1e293b; }
+    .ing-unit-input { width: 60px; flex-shrink: 0; }
+    .ing-store { flex: 1; min-width: 0; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.3rem 0.25rem; font-size: 0.8rem; background: #fff; outline: none; color: #1e293b; box-sizing: border-box; }
     .ing-store:focus { border-color: #3b82f6; }
     .ing-del { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; padding: 0.1rem 0.25rem; flex-shrink: 0; line-height: 1; }
     .ing-detail-label { font-size: 0.7rem; color: #94a3b8; white-space: nowrap; flex-shrink: 0; }
@@ -231,7 +236,7 @@
         <div id="dishScrapeMsg" style="display:none; font-size:0.85rem; margin-top:0.5rem; color:#dc2626; line-height:1.4"></div>
       </div>
 
-      <div class="form-row">
+      <div class="ing-section">
         <label>Ingredients</label>
         <div id="ingList" class="ing-list"></div>
         <button class="add-ing-btn" onclick="addIngredientRow()">+ Add ingredient</button>
