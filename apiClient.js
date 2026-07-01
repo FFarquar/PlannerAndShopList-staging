@@ -32,7 +32,7 @@ function _hideLoading() {
 
 async function apiGet(endpoint, mockFile) {
   if (USE_MOCK && mockFile) {
-    const res = await fetch(`./mockdata/${mockFile}`);
+    const res = await fetch(`./mockdata/${mockFile}`, { cache: 'no-cache' });
     return res.json();
   }
   _showLoading();

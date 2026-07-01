@@ -1,5 +1,5 @@
 // Bumped automatically by CI on every deploy (sed replaces this line)
-const CACHE_NAME = 'planner-v22';
+const CACHE_NAME = 'planner-v23';
 
 const STATIC_ASSETS = [
   './login.html',
@@ -17,7 +17,7 @@ const STATIC_ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(cache => cache.addAll(STATIC_ASSETS.map(url => new Request(url, { cache: 'no-cache' }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -57,7 +57,7 @@ self.addEventListener('fetch', event => {
   const isAppShell = /\.(html|js)$/.test(url.pathname) || url.pathname === '/' || url.pathname.endsWith('/');
   if (isAppShell) {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-cache' })
         .then(res => {
           const clone = res.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
@@ -68,8 +68,8 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Everything else (images, manifest, etc.): cache first
+  // Everything else (images, manifest, etc.): cache first, revalidate on miss
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    caches.match(event.request).then(cached => cached || fetch(event.request, { cache: 'no-cache' }))
   );
 });

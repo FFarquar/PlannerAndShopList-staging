@@ -63,7 +63,7 @@ async function loadVersionInfo() {
 async function loadUsers() {
   try {
     if (window.APP_CONFIG?.USE_MOCK) {
-      const res = await fetch('./mockdata/mock-users.json');
+      const res = await fetch('./mockdata/mock-users.json', { cache: 'no-cache' });
       const raw = await res.json();
       users = raw.map(u => ({ ...u, createdDate: u.createdDate || null }));
     } else {
