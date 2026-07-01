@@ -394,8 +394,9 @@ function openDishModal(dishId, overrideIngredients) {
 
   document.getElementById('dishModalTitle').textContent = dish ? `Edit — ${dish.name}` : 'New Recipe';
   document.getElementById('dishName').value = dish?.name || '';
-  document.getElementById('dishUrlInput').value = dish?.recipeUrl || '';
-  document.getElementById('dishScrapeBtn').disabled = true;
+  const existingUrl = dish?.recipeUrl || '';
+  document.getElementById('dishUrlInput').value = existingUrl;
+  document.getElementById('dishScrapeBtn').disabled = !existingUrl;
   document.getElementById('dishScrapeMsg').style.display = 'none';
   dishScrapeAttempted = false;
 
@@ -436,7 +437,7 @@ function getIngredientMatches(query) {
   return [...starts, ...contains].slice(0, 8);
 }
 
-function wireIngredientAutocomplete(tr, nameInput, dropdown) {
+function wireIngredientAutocomplete(container, nameInput, dropdown) {
   function showSuggestions() {
     const matches = getIngredientMatches(nameInput.value);
     if (!matches.length) { dropdown.classList.remove('open'); return; }
@@ -453,9 +454,9 @@ function wireIngredientAutocomplete(tr, nameInput, dropdown) {
         const selected = allIngredientSuggestions.find(s => s.name === opt.dataset.name);
         if (!selected) return;
         nameInput.value = selected.name;
-        const qtyInput = tr.querySelector('.ing-qty');
-        const unitInput = tr.querySelector('.ing-unit');
-        const storeSelect = tr.querySelector('.ing-store');
+        const qtyInput = container.querySelector('.ing-qty');
+        const unitInput = container.querySelector('.ing-unit-input');
+        const storeSelect = container.querySelector('.ing-store');
         if (!qtyInput.value && selected.quantity) qtyInput.value = selected.quantity;
         if (!unitInput.value && selected.unit) unitInput.value = selected.unit;
         if (storeSelect && !storeSelect.value && selected.defaultStore) storeSelect.value = selected.defaultStore;
@@ -470,30 +471,37 @@ function wireIngredientAutocomplete(tr, nameInput, dropdown) {
 }
 
 function renderIngTable(ingredients) {
-  const tbody = document.getElementById('ingTableBody');
-  tbody.innerHTML = '';
-  ingredients.forEach((ing, i) => addIngredientRow(ing));
+  const list = document.getElementById('ingList');
+  list.innerHTML = '';
+  ingredients.forEach(ing => addIngredientRow(ing));
   if (!ingredients.length) addIngredientRow();
 }
 
 function addIngredientRow(ing) {
-  const tbody = document.getElementById('ingTableBody');
-  const tr = document.createElement('tr');
-  const storeOptions = allStores.map(s => `<option ${ing?.defaultStore === s ? 'selected' : ''}>${s}</option>`).join('');
-  tr.innerHTML = `
-    <td><div class="ing-name-wrap">
-      <input class="ing-input" placeholder="Name" value="${esc(ing?.name || '')}" autocomplete="off" />
-      <div class="ing-suggest-dropdown"></div>
-    </div></td>
-    <td><input class="ing-input ing-qty" type="number" placeholder="0" value="${ing?.quantity ?? ''}" min="0" step="any" /></td>
-    <td><input class="ing-input ing-unit" placeholder="g" value="${esc(ing?.unit || '')}" /></td>
-    <td><select class="ing-store"><option value="">— Store —</option>${storeOptions}</select></td>
-    <td><button class="ing-del" onclick="this.closest('tr').remove()">✕</button></td>
+  const list = document.getElementById('ingList');
+  const card = document.createElement('div');
+  card.className = 'ing-card';
+  const storeOptions = allStores.map(s => `<option ${ing?.defaultStore === s ? 'selected' : ''}>${esc(s)}</option>`).join('');
+  card.innerHTML = `
+    <div class="ing-row1">
+      <div class="ing-name-wrap">
+        <input class="ing-input ing-name" placeholder="Ingredient name" value="${esc(ing?.name || '')}" autocomplete="off" />
+        <div class="ing-suggest-dropdown"></div>
+      </div>
+      <button class="ing-del" onclick="this.closest('.ing-card').remove()">✕</button>
+    </div>
+    <div class="ing-row2">
+      <span class="ing-detail-label">Qty</span>
+      <input class="ing-input ing-qty" type="number" placeholder="0" value="${ing?.quantity ?? ''}" min="0" step="any" />
+      <span class="ing-detail-label">Unit</span>
+      <input class="ing-input ing-unit-input" placeholder="e.g. g" value="${esc(ing?.unit || '')}" />
+      <select class="ing-store"><option value="">— Store —</option>${storeOptions}</select>
+    </div>
   `;
-  tbody.appendChild(tr);
-  const nameInput = tr.querySelector('.ing-input');
-  const dropdown = tr.querySelector('.ing-suggest-dropdown');
-  wireIngredientAutocomplete(tr, nameInput, dropdown);
+  list.appendChild(card);
+  const nameInput = card.querySelector('.ing-name');
+  const dropdown = card.querySelector('.ing-suggest-dropdown');
+  wireIngredientAutocomplete(card, nameInput, dropdown);
 }
 
 async function saveDish() {
@@ -502,17 +510,13 @@ async function saveDish() {
 
   const recipeUrl = document.getElementById('dishUrlInput').value.trim() || null;
 
-  const rows = document.querySelectorAll('#ingTableBody tr');
-  const ingredients = Array.from(rows).map(tr => {
-    const inputs = tr.querySelectorAll('input');
-    const store = tr.querySelector('select').value;
-    return {
-      name: inputs[0].value.trim(),
-      quantity: parseFloat(inputs[1].value) || 0,
-      unit: inputs[2].value.trim(),
-      defaultStore: store,
-    };
-  }).filter(i => i.name);
+  const cards = document.querySelectorAll('#ingList .ing-card');
+  const ingredients = Array.from(cards).map(card => ({
+    name: card.querySelector('.ing-name').value.trim(),
+    quantity: parseFloat(card.querySelector('.ing-qty').value) || 0,
+    unit: card.querySelector('.ing-unit-input').value.trim(),
+    defaultStore: card.querySelector('.ing-store').value,
+  })).filter(i => i.name);
 
   try {
     if (editingDishId) {

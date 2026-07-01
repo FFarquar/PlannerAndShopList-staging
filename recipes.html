@@ -24,7 +24,7 @@
     .header-btn:hover { background: rgba(255,255,255,0.1); }
     .header-actions { flex: 1; display: flex; align-items: center; justify-content: flex-start; gap: 0.75rem; overflow-x: auto; min-width: 0; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
     .header-actions::-webkit-scrollbar { display: none; }
-    .hamburger-btn { display: none; background: none; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 0.5rem; border-radius: 6px; cursor: pointer; flex-direction: column; justify-content: center; gap: 0.23rem; flex-shrink: 0; }
+    .hamburger-btn { display: none; background: none; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 0.5rem; border-radius: 6px; cursor: pointer; flex-direction: column; justify-content: center; gap: 0.23rem; flex-shrink: 0; margin-left: auto; }
     .hamburger-btn span { display: block; width: 1.1rem; height: 2px; background: #fff; border-radius: 1px; }
     @media (max-width: 640px) {
       .hamburger-btn { display: flex; }
@@ -90,19 +90,22 @@
     .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: #3b82f6; }
     .form-row textarea { resize: vertical; font-family: inherit; line-height: 1.5; }
 
-    /* Ingredients table in dish modal */
-    .ing-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 0.75rem; }
-    .ing-table th { text-align: left; font-size: 0.75rem; color: #64748b; font-weight: 600; padding: 0.3rem 0.35rem; border-bottom: 1px solid #f1f5f9; }
-    .ing-table td { padding: 0.3rem 0.35rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
-    .ing-input { width: 100%; border: 1px solid transparent; border-radius: 5px; padding: 0.2rem 0.35rem; font-size: 0.83rem; background: transparent; outline: none; }
-    .ing-input:focus { border-color: #93c5fd; background: #fff; }
-    .ing-qty { width: 55px; }
+    /* Ingredient cards in dish modal */
+    .ing-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .ing-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0.6rem; background: #f8fafc; }
+    .ing-row1 { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+    .ing-row2 { display: flex; align-items: center; gap: 0.45rem; }
+    .ing-name-wrap { flex: 1; position: relative; }
+    .ing-input { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.3rem 0.45rem; font-size: 0.875rem; background: #fff; outline: none; color: #1e293b; }
+    .ing-input:focus { border-color: #3b82f6; }
+    .ing-qty { width: 52px; flex-shrink: 0; text-align: center; }
     .ing-qty::-webkit-outer-spin-button, .ing-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .ing-qty { -moz-appearance: textfield; }
-    .ing-unit { width: 55px; }
-    .ing-store { border: 1px solid transparent; border-radius: 5px; padding: 0.2rem 0.3rem; font-size: 0.8rem; background: transparent; outline: none; width: 100%; }
-    .ing-store:focus { border-color: #93c5fd; background: #fff; }
-    .ing-del { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.95rem; padding: 0 0.15rem; }
+    .ing-unit-input { width: 68px; flex-shrink: 0; }
+    .ing-store { flex: 1; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.3rem 0.35rem; font-size: 0.8rem; background: #fff; outline: none; color: #1e293b; }
+    .ing-store:focus { border-color: #3b82f6; }
+    .ing-del { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; padding: 0.1rem 0.25rem; flex-shrink: 0; line-height: 1; }
+    .ing-detail-label { font-size: 0.7rem; color: #94a3b8; white-space: nowrap; flex-shrink: 0; }
     .add-ing-btn { background: none; border: 1px dashed #94a3b8; color: #64748b; border-radius: 6px; padding: 0.3rem 0.65rem; cursor: pointer; font-size: 0.8rem; }
     .add-ing-btn:hover { background: #f8fafc; }
 
@@ -219,7 +222,7 @@
       </div>
       <div class="form-row">
         <label>Recipe URL <span style="font-weight:400; color:#94a3b8; font-size:0.78rem">(optional)</span></label>
-        <input type="url" id="dishUrlInput" placeholder="https://..." oninput="onDishUrlInput()" />
+        <input type="text" id="dishUrlInput" placeholder="https://..." inputmode="url" autocomplete="url" oninput="onDishUrlInput()" />
       </div>
       <div style="margin-bottom:0.85rem">
         <button id="dishScrapeBtn" class="btn btn-secondary btn-sm" onclick="attemptDishScrapeIngredients()" disabled>
@@ -230,18 +233,7 @@
 
       <div class="form-row">
         <label>Ingredients</label>
-        <table class="ing-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th class="ing-qty">Qty</th>
-              <th class="ing-unit">Unit</th>
-              <th>Store</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="ingTableBody"></tbody>
-        </table>
+        <div id="ingList" class="ing-list"></div>
         <button class="add-ing-btn" onclick="addIngredientRow()">+ Add ingredient</button>
       </div>
       <div class="modal-actions">

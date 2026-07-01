@@ -34,10 +34,14 @@ async function loadVersionInfo() {
       document.getElementById('vBuild').textContent = `#${v.build}`;
     }
     if (v.commit) {
-      const sha7 = v.commit.slice(0, 7);
       const link = document.createElement('a');
       link.className = 'version-link';
-      link.textContent = sha7;
+      if (v.commitDate) {
+        const d = new Date(v.commitDate);
+        link.textContent = d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+      } else {
+        link.textContent = v.commit.slice(0, 7);
+      }
       link.href = `https://github.com/FFarquar/PlannerAndShopList/commit/${v.commit}`;
       link.target = '_blank';
       link.rel = 'noopener';

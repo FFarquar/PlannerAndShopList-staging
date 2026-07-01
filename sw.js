@@ -1,5 +1,5 @@
 // Bumped automatically by CI on every deploy (sed replaces this line)
-const CACHE_NAME = 'planner-v16';
+const CACHE_NAME = 'planner-v17';
 
 const STATIC_ASSETS = [
   './login.html',
