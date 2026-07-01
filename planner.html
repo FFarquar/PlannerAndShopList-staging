@@ -107,19 +107,32 @@
     .dish-option:hover { background: #f0f9ff; }
     .dish-option.create-new { color: #2563eb; font-style: italic; }
 
-    .ingredients-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 0.75rem; }
-    .ingredients-table th { text-align: left; font-size: 0.75rem; color: #64748b; font-weight: 600; padding: 0.3rem 0.4rem; border-bottom: 1px solid #f1f5f9; }
-    .ingredients-table td { padding: 0.35rem 0.4rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+    .ingredients-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .ingredients-table th { text-align: left; font-size: 0.75rem; color: #64748b; font-weight: 600; padding: 0.3rem 0.4rem; border-bottom: 1px solid #f1f5f9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ingredients-table td { padding: 0.35rem 0.4rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; overflow: hidden; }
+    .col-buy { width: 30px; }
+    .col-qty { width: 50px; }
+    .col-unit { width: 46px; }
+    .col-store { width: 74px; }
+    .col-del { width: 26px; }
     .ing-input { width: 100%; border: 1px solid transparent; border-radius: 5px; padding: 0.25rem 0.4rem; font-size: 0.85rem; background: transparent; outline: none; }
     .ing-input:focus { border-color: #93c5fd; background: #fff; }
-    .ing-qty { width: 55px; }
     .ing-qty::-webkit-outer-spin-button, .ing-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .ing-qty { -moz-appearance: textfield; }
-    .ing-unit { width: 60px; }
-    .store-select { border: 1px solid transparent; border-radius: 5px; padding: 0.25rem 0.3rem; font-size: 0.82rem; background: transparent; outline: none; width: 100%; }
+    .store-select { border: 1px solid transparent; border-radius: 5px; padding: 0.25rem 0.3rem; font-size: 0.82rem; background: transparent; outline: none; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .store-select:focus { border-color: #93c5fd; background: #fff; }
     .needy-check { width: 1rem; height: 1rem; cursor: pointer; accent-color: #2563eb; }
     .ing-del-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.95rem; padding: 0 0.2rem; }
+    @media (max-width: 640px) {
+      .col-buy { width: 24px; }
+      .col-qty { width: 42px; }
+      .col-unit { width: 36px; }
+      .col-store { width: 62px; }
+      .col-del { width: 18px; }
+      .ingredients-table th, .ingredients-table td { padding: 0.3rem 0.2rem; }
+      .ing-input, .store-select { font-size: 0.78rem; padding-left: 0.2rem; padding-right: 0.2rem; }
+      .ing-del-btn { padding: 0; }
+    }
 
     .add-ing-btn { background: none; border: 1px dashed #94a3b8; color: #64748b; border-radius: 6px; padding: 0.35rem 0.75rem; cursor: pointer; font-size: 0.82rem; margin-top: 0.2rem; }
     .add-ing-btn:hover { background: #f8fafc; }

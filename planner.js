@@ -518,6 +518,14 @@ function renderDishBlock(index) {
       <button class="btn btn-danger btn-sm" onclick="removeDishBlock(${index})">Remove</button>
     </div>
     <table class="ingredients-table">
+      <colgroup>
+        <col class="col-buy" />
+        <col class="col-ing" />
+        <col class="col-qty" />
+        <col class="col-unit" />
+        <col class="col-store" />
+        <col class="col-del" />
+      </colgroup>
       <thead>
         <tr>
           <th>Buy?</th>
