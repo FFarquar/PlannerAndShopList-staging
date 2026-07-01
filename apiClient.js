@@ -122,6 +122,12 @@ async function apiGetRecipeDownloadUrl(dishId) {
   return apiGet(`/dishes/${dishId}/recipe-download-url`);
 }
 
+async function apiScrapeRecipe(url) {
+  if (USE_MOCK) throw new Error('Ingredient scraping is not available in local mode — please add ingredients manually');
+  const params = new URLSearchParams({ url });
+  return apiGet(`/dishes/scrape-recipe?${params}`, null);
+}
+
 async function apiUploadToS3(uploadUrl, file) {
   const res = await fetch(uploadUrl, {
     method: 'PUT',

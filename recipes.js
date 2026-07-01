@@ -5,6 +5,7 @@ let allIngredientSuggestions = [];
 let editingDishId = null;   // null = new dish
 let editingRecipeDish = null; // dish being given a recipe
 let recipeType = 'url';     // 'url' or 'file'
+let scrapeAttempted = false;
 let confirmCallback = null;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -137,6 +138,9 @@ function openRecipeModal(dishId) {
   document.getElementById('recipeFileInput').value = '';
   document.getElementById('uploadProgress').style.display = 'none';
   document.getElementById('progressBar').style.width = '0';
+  document.getElementById('scrapeMsg').style.display = 'none';
+  document.getElementById('scrapeIngredientsBtn').disabled = true;
+  scrapeAttempted = false;
 
   const hasUrl = !!dish.recipeUrl;
   const hasFile = !!dish.recipeAttachment?.s3Key;
@@ -175,6 +179,57 @@ function setRecipeType(type) {
   document.getElementById('btnTypeFile').classList.toggle('active', type === 'file');
   document.getElementById('panelUrl').classList.toggle('active', type === 'url');
   document.getElementById('panelFile').classList.toggle('active', type === 'file');
+}
+
+function onRecipeUrlInput() {
+  const hasUrl = !!document.getElementById('recipeUrlInput').value.trim();
+  document.getElementById('scrapeIngredientsBtn').disabled = !hasUrl;
+  const msg = document.getElementById('scrapeMsg');
+  msg.style.display = 'none';
+  msg.textContent = '';
+}
+
+async function attemptScrapeIngredients() {
+  const url = document.getElementById('recipeUrlInput').value.trim();
+  if (!url) return;
+
+  if (scrapeAttempted) {
+    if (!window.confirm('Ingredients have already been fetched this session. Fetching again will replace any ingredients you have added. Continue?')) return;
+  }
+
+  const btn = document.getElementById('scrapeIngredientsBtn');
+  const msgEl = document.getElementById('scrapeMsg');
+  msgEl.style.display = 'none';
+
+  btn.disabled = true;
+  btn.textContent = 'Fetching…';
+  scrapeAttempted = true;
+
+  try {
+    const result = await apiScrapeRecipe(url);
+
+    if (!result?.ingredients?.length) {
+      showScrapeError('No ingredients found on this page. Please add them manually.');
+      return;
+    }
+
+    const dish = editingRecipeDish;
+    closeRecipeModal();
+    openDishModal(dish.dishId, result.ingredients);
+    showToast(`Found ${result.ingredients.length} ingredient${result.ingredients.length !== 1 ? 's' : ''} — review and save below`);
+
+  } catch (err) {
+    showScrapeError(err.message || 'Could not extract ingredients from this page. Please add them manually.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Attempt to list ingredients';
+  }
+}
+
+function showScrapeError(msg) {
+  const el = document.getElementById('scrapeMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
 }
 
 async function saveRecipe() {
@@ -276,14 +331,14 @@ async function removeRecipe() {
 }
 
 // ─── Dish modal ───────────────────────────────────────────────────────────────
-function openDishModal(dishId) {
+function openDishModal(dishId, overrideIngredients) {
   editingDishId = dishId;
   const dish = dishId ? allDishes.find(d => d.dishId === dishId) : null;
 
   document.getElementById('dishModalTitle').textContent = dish ? `Edit — ${dish.name}` : 'New Recipe';
   document.getElementById('dishName').value = dish?.name || '';
 
-  renderIngTable(dish?.ingredients || []);
+  renderIngTable(overrideIngredients ?? dish?.ingredients ?? []);
   document.getElementById('dishModal').classList.add('open');
 }
 
