@@ -406,7 +406,9 @@ function renderDateGrid() {
 
   // Date rows
   dates.forEach(date => {
-    const label = new Date(date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+    const dateObj = new Date(date + 'T00:00:00');
+    const weekday = dateObj.toLocaleDateString('en-AU', { weekday: 'short' });
+    const label = `${weekday} ${dateObj.getDate()}/${dateObj.getMonth() + 1}`;
     html += `<div class="grid-date-label">${label}</div>`;
     MEAL_TIMES.forEach(mt => {
       const sk = `DAYMEAL#${date}#${mt}`;

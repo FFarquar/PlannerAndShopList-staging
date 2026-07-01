@@ -392,13 +392,19 @@ function openDishModal(dishId, overrideIngredients) {
   editingDishId = dishId;
   const dish = dishId ? allDishes.find(d => d.dishId === dishId) : null;
 
-  document.getElementById('dishModalTitle').textContent = dish ? `Edit — ${dish.name}` : 'New Recipe';
+  document.getElementById('dishModalTitle').textContent = dish ? `Ingredients — ${dish.name}` : 'New Recipe';
   document.getElementById('dishName').value = dish?.name || '';
   const existingUrl = dish?.recipeUrl || '';
   document.getElementById('dishUrlInput').value = existingUrl;
   document.getElementById('dishScrapeBtn').disabled = !existingUrl;
   document.getElementById('dishScrapeMsg').style.display = 'none';
   dishScrapeAttempted = false;
+
+  // Editing an existing dish's ingredients only — hide name/URL/scrape fields
+  const isNewRecipe = !dish;
+  document.getElementById('dishNameRow').style.display = isNewRecipe ? '' : 'none';
+  document.getElementById('dishUrlRow').style.display = isNewRecipe ? '' : 'none';
+  document.getElementById('dishScrapeRow').style.display = isNewRecipe ? '' : 'none';
 
   renderIngTable(overrideIngredients ?? dish?.ingredients ?? []);
   document.getElementById('dishModal').classList.add('open');

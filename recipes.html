@@ -221,15 +221,15 @@
   <div id="dishModal" class="modal-overlay">
     <div class="modal">
       <h3 id="dishModalTitle">New Recipe</h3>
-      <div class="form-row">
+      <div class="form-row" id="dishNameRow">
         <label>Dish Name</label>
         <input type="text" id="dishName" placeholder="e.g. Spaghetti Carbonara" />
       </div>
-      <div class="form-row">
+      <div class="form-row" id="dishUrlRow">
         <label>Recipe URL <span style="font-weight:400; color:#94a3b8; font-size:0.78rem">(optional)</span></label>
         <input type="text" id="dishUrlInput" placeholder="https://..." inputmode="url" autocomplete="url" oninput="onDishUrlInput()" />
       </div>
-      <div style="margin-bottom:0.85rem">
+      <div id="dishScrapeRow" style="margin-bottom:0.85rem">
         <button id="dishScrapeBtn" class="btn btn-secondary btn-sm" onclick="attemptDishScrapeIngredients()" disabled>
           Attempt to list ingredients
         </button>

@@ -64,8 +64,9 @@
     .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; font-size: 0.95rem; }
 
     /* Plan detail — date grid */
-    .plan-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-    .plan-header h2 { font-size: 1.2rem; color: #1e3a5f; flex: 1; }
+    .plan-header { margin-bottom: 1.25rem; }
+    .plan-header-actions { display: flex; flex-direction: row; justify-content: space-between; gap: 0.4rem; margin-top: 0.75rem; }
+    .plan-header h2 { font-size: 1.2rem; color: #1e3a5f; text-align: center; width: 100%; }
     .back-btn { background: none; border: none; color: #3b82f6; cursor: pointer; font-size: 0.9rem; padding: 0; font-weight: 600; }
     .back-btn:hover { text-decoration: underline; }
 
@@ -198,6 +199,7 @@
       <span></span><span></span><span></span>
     </button>
     <div class="header-actions" id="headerActions">
+      <button class="header-btn" onclick="showView('plans')">Planner</button>
       <button class="header-btn" onclick="openStoresModal()">Stores</button>
       <button class="header-btn" onclick="window.location.href='recipes.html'">Recipes</button>
       <button class="header-btn" onclick="window.location.href='shopping.html'">Shopping</button>
@@ -220,10 +222,11 @@
   <!-- View: Plan detail -->
   <div id="viewPlanDetail" class="view">
     <div class="plan-header">
-      <button class="back-btn" onclick="showView('plans')">← Meal Plans</button>
       <h2 id="planDetailTitle">Plan</h2>
-      <button class="btn btn-success btn-sm" id="viewShopBtn">View Shopping List</button>
-      <button class="btn btn-danger btn-sm" id="deletePlanBtn">Delete Plan</button>
+      <div class="plan-header-actions">
+        <button class="btn btn-success btn-sm" id="viewShopBtn">View Shopping List</button>
+        <button class="btn btn-danger btn-sm" id="deletePlanBtn">Delete Plan</button>
+      </div>
     </div>
     <div id="dateGrid" class="date-grid"></div>
   </div>
