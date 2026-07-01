@@ -6,6 +6,7 @@ let editingDishId = null;   // null = new dish
 let editingRecipeDish = null; // dish being given a recipe
 let recipeType = 'url';     // 'url' or 'file'
 let scrapeAttempted = false;
+let dishScrapeAttempted = false;
 let confirmCallback = null;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -93,7 +94,7 @@ function renderDishes() {
         <div class="dish-meta">${ingCount} ing</div>
         <div class="recipe-badges">${badges.join('')}</div>
         <div class="dish-card-actions">
-          <button class="btn btn-primary btn-sm" onclick="openRecipeModal('${d.dishId}')">Recipe Link</button>
+          <button class="btn btn-primary btn-sm" onclick="openRecipeModal('${d.dishId}')">Recipe details</button>
           <button class="btn btn-secondary btn-sm" onclick="openDishModal('${d.dishId}')">Ingredients</button>
           <button class="btn btn-danger btn-sm" onclick="confirmDeleteDish('${d.dishId}')">Delete</button>
         </div>
@@ -135,6 +136,7 @@ function openRecipeModal(dishId) {
   document.getElementById('recipeModalTitle').textContent = `Recipe — ${dish.name}`;
   document.getElementById('recipeNameInput').value = dish.name;
   document.getElementById('recipeUrlInput').value = dish.recipeUrl || '';
+  document.getElementById('recipeNotesInput').value = dish.recipeNotes || '';
   document.getElementById('recipeFileInput').value = '';
   document.getElementById('uploadProgress').style.display = 'none';
   document.getElementById('progressBar').style.width = '0';
@@ -213,7 +215,14 @@ async function attemptScrapeIngredients() {
       return;
     }
 
+    // Save the URL before switching modals
     const dish = editingRecipeDish;
+    await apiPut(`/dishes/${dish.dishId}`, { recipeUrl: url });
+    dish.recipeUrl = url;
+    delete dish.recipeAttachment;
+    mockPersistDishes();
+    renderDishes();
+
     closeRecipeModal();
     openDishModal(dish.dishId, result.ingredients);
     showToast(`Found ${result.ingredients.length} ingredient${result.ingredients.length !== 1 ? 's' : ''} — review and save below`);
@@ -232,23 +241,70 @@ function showScrapeError(msg) {
   el.style.display = 'block';
 }
 
+function onDishUrlInput() {
+  const hasUrl = !!document.getElementById('dishUrlInput').value.trim();
+  document.getElementById('dishScrapeBtn').disabled = !hasUrl;
+  const msg = document.getElementById('dishScrapeMsg');
+  msg.style.display = 'none';
+  msg.textContent = '';
+}
+
+async function attemptDishScrapeIngredients() {
+  const url = document.getElementById('dishUrlInput').value.trim();
+  if (!url) return;
+
+  if (dishScrapeAttempted) {
+    if (!window.confirm('Ingredients have already been fetched this session. Fetching again will replace any ingredients you have added. Continue?')) return;
+  }
+
+  const btn = document.getElementById('dishScrapeBtn');
+  const msgEl = document.getElementById('dishScrapeMsg');
+  msgEl.style.display = 'none';
+
+  btn.disabled = true;
+  btn.textContent = 'Fetching…';
+  dishScrapeAttempted = true;
+
+  try {
+    const result = await apiScrapeRecipe(url);
+    if (!result?.ingredients?.length) {
+      showDishScrapeError('No ingredients found on this page. Please add them manually.');
+      return;
+    }
+    renderIngTable(result.ingredients);
+    showToast(`Found ${result.ingredients.length} ingredient${result.ingredients.length !== 1 ? 's' : ''} — review and save below`);
+  } catch (err) {
+    showDishScrapeError(err.message || 'Could not extract ingredients from this page. Please add them manually.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Attempt to list ingredients';
+  }
+}
+
+function showDishScrapeError(msg) {
+  const el = document.getElementById('dishScrapeMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
 async function saveRecipe() {
   if (!editingRecipeDish) return;
   const dishId = editingRecipeDish.dishId;
   const newName = document.getElementById('recipeNameInput').value.trim();
   if (!newName) { showToast('Recipe name is required'); return; }
+  const recipeNotes = document.getElementById('recipeNotesInput').value.trim() || null;
 
   try {
     if (recipeType === 'url') {
       const url = document.getElementById('recipeUrlInput').value.trim();
       if (url) {
-        await apiPut(`/dishes/${dishId}`, { name: newName, recipeUrl: url, recipeAttachment: null });
+        await apiPut(`/dishes/${dishId}`, { name: newName, recipeUrl: url, recipeAttachment: null, recipeNotes });
         const dish = allDishes.find(d => d.dishId === dishId);
-        if (dish) { dish.name = newName; dish.recipeUrl = url; delete dish.recipeAttachment; }
+        if (dish) { dish.name = newName; dish.recipeUrl = url; delete dish.recipeAttachment; if (recipeNotes) dish.recipeNotes = recipeNotes; else delete dish.recipeNotes; }
       } else {
-        await apiPut(`/dishes/${dishId}`, { name: newName });
+        await apiPut(`/dishes/${dishId}`, { name: newName, recipeNotes });
         const dish = allDishes.find(d => d.dishId === dishId);
-        if (dish) dish.name = newName;
+        if (dish) { dish.name = newName; if (recipeNotes) dish.recipeNotes = recipeNotes; else delete dish.recipeNotes; }
       }
 
     } else {
@@ -282,20 +338,21 @@ async function saveRecipe() {
           fileType: file.type,
         };
 
-        await apiPut(`/dishes/${dishId}`, { name: newName, recipeAttachment: attachment, recipeUrl: null });
+        await apiPut(`/dishes/${dishId}`, { name: newName, recipeAttachment: attachment, recipeUrl: null, recipeNotes });
         const dish = allDishes.find(d => d.dishId === dishId);
         if (dish) {
           dish.name = newName;
           dish.recipeAttachment = { ...attachment, uploadedDate: new Date().toISOString() };
           delete dish.recipeUrl;
+          if (recipeNotes) dish.recipeNotes = recipeNotes; else delete dish.recipeNotes;
         }
 
         showUploadProgress(100, 'Done');
       } else {
-        // No new file — only the name changed
-        await apiPut(`/dishes/${dishId}`, { name: newName });
+        // No new file — only the name (and notes) changed
+        await apiPut(`/dishes/${dishId}`, { name: newName, recipeNotes });
         const dish = allDishes.find(d => d.dishId === dishId);
-        if (dish) dish.name = newName;
+        if (dish) { dish.name = newName; if (recipeNotes) dish.recipeNotes = recipeNotes; else delete dish.recipeNotes; }
       }
     }
 
@@ -337,6 +394,10 @@ function openDishModal(dishId, overrideIngredients) {
 
   document.getElementById('dishModalTitle').textContent = dish ? `Edit — ${dish.name}` : 'New Recipe';
   document.getElementById('dishName').value = dish?.name || '';
+  document.getElementById('dishUrlInput').value = dish?.recipeUrl || '';
+  document.getElementById('dishScrapeBtn').disabled = true;
+  document.getElementById('dishScrapeMsg').style.display = 'none';
+  dishScrapeAttempted = false;
 
   renderIngTable(overrideIngredients ?? dish?.ingredients ?? []);
   document.getElementById('dishModal').classList.add('open');
@@ -439,6 +500,8 @@ async function saveDish() {
   const name = document.getElementById('dishName').value.trim();
   if (!name) { showToast('Dish name is required'); return; }
 
+  const recipeUrl = document.getElementById('dishUrlInput').value.trim() || null;
+
   const rows = document.querySelectorAll('#ingTableBody tr');
   const ingredients = Array.from(rows).map(tr => {
     const inputs = tr.querySelectorAll('input');
@@ -453,13 +516,19 @@ async function saveDish() {
 
   try {
     if (editingDishId) {
-      await apiPut(`/dishes/${editingDishId}`, { name, ingredients });
+      await apiPut(`/dishes/${editingDishId}`, { name, ingredients, recipeUrl });
       const dish = allDishes.find(d => d.dishId === editingDishId);
-      if (dish) { dish.name = name; dish.ingredients = ingredients; }
+      if (dish) {
+        dish.name = name;
+        dish.ingredients = ingredients;
+        if (recipeUrl) dish.recipeUrl = recipeUrl; else delete dish.recipeUrl;
+      }
     } else {
-      const created = await apiPost('/dishes', { name, ingredients });
+      const payload = { name, ingredients };
+      if (recipeUrl) payload.recipeUrl = recipeUrl;
+      const created = await apiPost('/dishes', payload);
       if (created) {
-        allDishes.push({ dishId: created.dishId || created.id || crypto.randomUUID(), name, ingredients });
+        allDishes.push({ dishId: created.dishId || created.id || crypto.randomUUID(), name, ingredients, ...(recipeUrl ? { recipeUrl } : {}) });
       }
     }
     mockPersistDishes();

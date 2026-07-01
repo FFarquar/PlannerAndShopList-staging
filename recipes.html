@@ -86,8 +86,9 @@
 
     .form-row { margin-bottom: 0.85rem; }
     .form-row label { display: block; font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
-    .form-row input, .form-row select { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; outline: none; background: #fff; }
-    .form-row input:focus, .form-row select:focus { border-color: #3b82f6; }
+    .form-row input, .form-row select, .form-row textarea { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; outline: none; background: #fff; }
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: #3b82f6; }
+    .form-row textarea { resize: vertical; font-family: inherit; line-height: 1.5; }
 
     /* Ingredients table in dish modal */
     .ing-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 0.75rem; }
@@ -217,6 +218,17 @@
         <input type="text" id="dishName" placeholder="e.g. Spaghetti Carbonara" />
       </div>
       <div class="form-row">
+        <label>Recipe URL <span style="font-weight:400; color:#94a3b8; font-size:0.78rem">(optional)</span></label>
+        <input type="url" id="dishUrlInput" placeholder="https://..." oninput="onDishUrlInput()" />
+      </div>
+      <div style="margin-bottom:0.85rem">
+        <button id="dishScrapeBtn" class="btn btn-secondary btn-sm" onclick="attemptDishScrapeIngredients()" disabled>
+          Attempt to list ingredients
+        </button>
+        <div id="dishScrapeMsg" style="display:none; font-size:0.85rem; margin-top:0.5rem; color:#dc2626; line-height:1.4"></div>
+      </div>
+
+      <div class="form-row">
         <label>Ingredients</label>
         <table class="ing-table">
           <thead>
@@ -283,6 +295,11 @@
           <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
           <div class="progress-label" id="progressLabel">Uploading…</div>
         </div>
+      </div>
+
+      <div class="form-row">
+        <label>Recipe notes</label>
+        <textarea id="recipeNotesInput" rows="5" placeholder="Cooking tips, serving suggestions, substitutions…"></textarea>
       </div>
 
       <div class="modal-actions">

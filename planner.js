@@ -559,7 +559,7 @@ function renderDishBlock(index) {
 
 function addDishBlock(dish) {
   const newDish = dish
-    ? { dishId: dish.dishId, dishName: dish.name, ingredients: dish.ingredients.map(ing => ({ ...ing, needToBuy: true })) }
+    ? { dishId: dish.dishId, dishName: dish.name, ingredients: dish.ingredients.map(ing => ({ ...ing, needToBuy: false })) }
     : { dishId: crypto.randomUUID(), dishName: '', ingredients: [] };
   currentSlotDishes.push(newDish);
   const index = currentSlotDishes.length - 1;
@@ -643,7 +643,7 @@ function selectDish(index, dish) {
   currentSlotDishes[index] = {
     dishId: dish.dishId,
     dishName: dish.name,
-    ingredients: (dish.ingredients || []).map(ing => ({ ...ing, needToBuy: true })),
+    ingredients: (dish.ingredients || []).map(ing => ({ ...ing, needToBuy: false })),
   };
   const block = document.querySelector(`.dish-block[data-index="${index}"]`);
   if (block) {
@@ -816,7 +816,7 @@ function appendIngredientRow(tbody, dishIndex, ingIndex, ing) {
 }
 
 function addIngredientRow(dishIndex) {
-  const ing = { id: crypto.randomUUID(), name: '', quantity: 0, unit: '', defaultStore: '', needToBuy: true };
+  const ing = { id: crypto.randomUUID(), name: '', quantity: 0, unit: '', defaultStore: '', needToBuy: false };
   currentSlotDishes[dishIndex].ingredients.push(ing);
   const tbody = document.getElementById(`ingSBody_${dishIndex}`);
   if (tbody) {
