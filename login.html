@@ -92,6 +92,7 @@
   </div>
 
   <script src="./config.js"></script>
+  <script src="./apiClient.js"></script>
   <script>
     const env = window.APP_CONFIG?.ENVIRONMENT || 'LOCAL';
     const badge = document.getElementById('envBadge');
@@ -133,9 +134,9 @@
           data = await res.json();
         }
 
-        localStorage.setItem('authToken', data.accessToken || data.token);
-        localStorage.setItem('userRole', data.role || 'USER');
-        localStorage.setItem('userLoginID', loginID);
+        setAuthToken(data.accessToken || data.token);
+        setUserRole(data.role || 'USER');
+        setUserLoginID(loginID);
         window.location.href = 'planner.html';
       } catch (err) {
         errorMsg.textContent = err.message || 'Login failed. Please try again.';

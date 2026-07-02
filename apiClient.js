@@ -1,8 +1,43 @@
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || 'http://localhost:3000';
 const USE_MOCK = window.APP_CONFIG?.USE_MOCK === true;
 
+// Staging and production are both served from the same GitHub Pages origin
+// (different paths only), so localStorage is shared between them. Namespace
+// auth keys by environment to stop one instance from clobbering the other's session.
+const AUTH_ENV = window.APP_CONFIG?.ENVIRONMENT || 'LOCAL';
+
+function authStorageKey(name) {
+  return `${name}_${AUTH_ENV}`;
+}
+
+function getAuthToken() {
+  return localStorage.getItem(authStorageKey('authToken'));
+}
+
+function setAuthToken(token) {
+  localStorage.setItem(authStorageKey('authToken'), token);
+}
+
+function getUserRole() {
+  return localStorage.getItem(authStorageKey('userRole'));
+}
+
+function setUserRole(role) {
+  localStorage.setItem(authStorageKey('userRole'), role);
+}
+
+function setUserLoginID(loginID) {
+  localStorage.setItem(authStorageKey('userLoginID'), loginID);
+}
+
+function clearAuthStorage() {
+  localStorage.removeItem(authStorageKey('authToken'));
+  localStorage.removeItem(authStorageKey('userRole'));
+  localStorage.removeItem(authStorageKey('userLoginID'));
+}
+
 function authHeaders() {
-  const token = localStorage.getItem('authToken');
+  const token = getAuthToken();
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`,
@@ -11,7 +46,7 @@ function authHeaders() {
 
 function handleAuthError(res) {
   if (res.status === 401 || res.status === 403) {
-    localStorage.clear();
+    clearAuthStorage();
     window.location.href = 'login.html';
     return true;
   }

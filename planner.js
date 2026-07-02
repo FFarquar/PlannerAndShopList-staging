@@ -26,7 +26,7 @@ let plansCache = []; // [{ name, quantity, unit, defaultStore }]
 let _confirmCallback = null;
 
 const MEAL_TIMES = ['BREAKFAST', 'LUNCH', 'DINNER'];
-const userRole = localStorage.getItem('userRole') || 'USER';
+const userRole = getUserRole() || 'USER';
 
 // =====================
 // Dish helpers (mock persistence)
@@ -56,7 +56,7 @@ async function loadDishes() {
 // Init
 // =====================
 async function init() {
-  if (!localStorage.getItem('authToken')) {
+  if (!getAuthToken()) {
     window.location.href = 'login.html';
     return;
   }
@@ -68,7 +68,7 @@ async function init() {
   if (env === 'PRODUCTION') badge.classList.add('production');
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.clear();
+    clearAuthStorage();
     window.location.href = 'login.html';
   });
 

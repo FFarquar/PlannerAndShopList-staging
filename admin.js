@@ -1,7 +1,7 @@
-if (!localStorage.getItem('authToken')) {
+if (!getAuthToken()) {
   window.location.href = 'login.html';
 }
-if (localStorage.getItem('userRole') !== 'ADMIN') {
+if (getUserRole() !== 'ADMIN') {
   window.location.href = 'planner.html';
 }
 
@@ -18,7 +18,7 @@ let toastTimer;
   if (env === 'PRODUCTION') badge.classList.add('production');
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.clear();
+    clearAuthStorage();
     window.location.href = 'login.html';
   });
 

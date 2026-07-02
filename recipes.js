@@ -11,7 +11,7 @@ let confirmCallback = null;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const token = localStorage.getItem('authToken');
+  const token = getAuthToken();
   if (!token) { window.location.href = 'login.html'; return; }
 
   const env = window.APP_CONFIG?.ENV || 'LOCAL';
@@ -20,11 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
   badge.className = `badge ${env.toLowerCase()}`;
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.clear();
+    clearAuthStorage();
     window.location.href = 'login.html';
   });
 
-  if (localStorage.getItem('userRole') === 'ADMIN') {
+  if (getUserRole() === 'ADMIN') {
     document.getElementById('adminBtn').style.display = '';
   }
 

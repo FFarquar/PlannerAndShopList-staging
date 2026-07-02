@@ -8,7 +8,7 @@ let shoppingItems = []; // flat list, grouped on render
 // Init
 // =====================
 async function init() {
-  if (!localStorage.getItem('authToken')) {
+  if (!getAuthToken()) {
     window.location.href = 'login.html';
     return;
   }
@@ -22,7 +22,7 @@ async function init() {
   if (env === 'STAGING') badge.classList.add('staging');
   if (env === 'PRODUCTION') badge.classList.add('production');
 
-  if (localStorage.getItem('userRole') === 'ADMIN') {
+  if (getUserRole() === 'ADMIN') {
     document.getElementById('adminBtn').style.display = '';
   }
 
