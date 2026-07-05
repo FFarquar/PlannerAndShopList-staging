@@ -85,6 +85,7 @@ async function init() {
   allStores = stores || [];
   buildIngredientSuggestions();
 
+  setupGridDragAndDrop();
   await loadPlans();
 }
 
@@ -414,18 +415,231 @@ function renderDateGrid() {
       const sk = `DAYMEAL#${date}#${mt}`;
       const dm = currentDayMeals[sk];
       const dishes = dm?.dishes || [];
+      const hasContent = Boolean(dm?.eatingOut) || dishes.length > 0;
       const dishHtml = dm?.eatingOut
         ? `<span class="slot-eating-out-tag">Eating out</span>`
         : dishes.length
           ? dishes.map(d => `<span class="slot-dish-tag">${escHtml(d.dishName)}</span>`).join('')
           : `<span class="slot-empty">Empty</span>`;
-      html += `<div class="grid-slot" onclick="openSlot('${date}', '${mt}')">
+      html += `<div class="grid-slot${hasContent ? ' has-content' : ''}" data-date="${date}" data-mealtime="${mt}" onclick="openSlot('${date}', '${mt}')">
         <div class="slot-dishes">${dishHtml}</div>
       </div>`;
     });
   });
 
   grid.innerHTML = html;
+}
+
+// =====================
+// Drag and drop (move/swap a meal between slots)
+// Uses Pointer Events (not HTML5 DnD) so the same code path handles mouse and touch.
+// Mouse starts dragging as soon as the pointer moves past a small threshold; touch/pen
+// require a short hold first so a normal tap (which opens the slot editor) and a page
+// scroll aren't mistaken for a drag.
+// =====================
+const DRAG_MOVE_THRESHOLD = 6;
+const DRAG_TOUCH_CANCEL_THRESHOLD = 10;
+const DRAG_LONG_PRESS_MS = 300;
+
+let _dragPending = null; // { pointerId, pointerType, slot, startX, startY, timer }
+let _drag = null; // { pointerId, srcDate, srcMealTime, ghost, lastOverSlot }
+let _justDragged = false;
+
+function setupGridDragAndDrop() {
+  const grid = document.getElementById('dateGrid');
+  grid.addEventListener('pointerdown', onSlotPointerDown);
+  // Capture phase so a click immediately following a drag never reaches the slot's onclick.
+  grid.addEventListener('click', (e) => {
+    if (_justDragged) { e.preventDefault(); e.stopPropagation(); _justDragged = false; }
+  }, true);
+}
+
+function onSlotPointerDown(e) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  const slot = e.target.closest('.grid-slot.has-content');
+  if (!slot || _dragPending || _drag) return;
+
+  const pending = {
+    pointerId: e.pointerId,
+    pointerType: e.pointerType,
+    slot,
+    startX: e.clientX,
+    startY: e.clientY,
+    timer: null,
+  };
+  _dragPending = pending;
+
+  if (pending.pointerType !== 'mouse') {
+    pending.timer = setTimeout(() => {
+      if (_dragPending === pending) startDrag(pending, pending.startX, pending.startY);
+    }, DRAG_LONG_PRESS_MS);
+  }
+
+  document.addEventListener('pointermove', onDocPointerMove);
+  document.addEventListener('pointerup', onDocPointerUp);
+  document.addEventListener('pointercancel', onDocPointerCancel);
+}
+
+function onDocPointerMove(e) {
+  if (_drag) {
+    if (e.pointerId !== _drag.pointerId) return;
+    updateDrag(e);
+    return;
+  }
+  if (!_dragPending || e.pointerId !== _dragPending.pointerId) return;
+  const dist = Math.hypot(e.clientX - _dragPending.startX, e.clientY - _dragPending.startY);
+  if (_dragPending.pointerType === 'mouse') {
+    if (dist > DRAG_MOVE_THRESHOLD) startDrag(_dragPending, e.clientX, e.clientY);
+  } else if (dist > DRAG_TOUCH_CANCEL_THRESHOLD) {
+    cancelPending(); // finger moved before the long-press fired — treat as a scroll, not a drag
+  }
+}
+
+function onDocPointerUp(e) {
+  if (_drag && e.pointerId === _drag.pointerId) { finishDrag(); return; }
+  cancelPending();
+}
+
+function onDocPointerCancel(e) {
+  if (_drag && e.pointerId === _drag.pointerId) { abortDrag(); return; }
+  cancelPending();
+}
+
+function cancelPending() {
+  if (_dragPending?.timer) clearTimeout(_dragPending.timer);
+  _dragPending = null;
+  document.removeEventListener('pointermove', onDocPointerMove);
+  document.removeEventListener('pointerup', onDocPointerUp);
+  document.removeEventListener('pointercancel', onDocPointerCancel);
+}
+
+function startDrag(pending, x, y) {
+  if (pending.timer) clearTimeout(pending.timer);
+  _dragPending = null;
+
+  const slot = pending.slot;
+  _drag = {
+    pointerId: pending.pointerId,
+    srcDate: slot.dataset.date,
+    srcMealTime: slot.dataset.mealtime,
+    ghost: buildDragGhost(slot),
+    lastOverSlot: null,
+  };
+  slot.classList.add('drag-source');
+  document.body.classList.add('dragging-meal');
+  document.body.appendChild(_drag.ghost);
+  positionGhost(x, y);
+}
+
+function updateDrag(e) {
+  e.preventDefault();
+  positionGhost(e.clientX, e.clientY);
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const overSlot = el?.closest('.grid-slot') || null;
+  if (_drag.lastOverSlot && _drag.lastOverSlot !== overSlot) {
+    _drag.lastOverSlot.classList.remove('drag-over');
+  }
+  if (overSlot && overSlot !== _drag.lastOverSlot) {
+    overSlot.classList.add('drag-over');
+  }
+  _drag.lastOverSlot = overSlot;
+}
+
+function positionGhost(x, y) {
+  if (!_drag?.ghost) return;
+  _drag.ghost.style.left = `${x}px`;
+  _drag.ghost.style.top = `${y}px`;
+}
+
+function buildDragGhost(slot) {
+  const ghost = document.createElement('div');
+  ghost.className = 'drag-ghost';
+  ghost.innerHTML = slot.querySelector('.slot-dishes')?.innerHTML || '';
+  return ghost;
+}
+
+function teardownDrag(drag) {
+  document.removeEventListener('pointermove', onDocPointerMove);
+  document.removeEventListener('pointerup', onDocPointerUp);
+  document.removeEventListener('pointercancel', onDocPointerCancel);
+  drag?.ghost.remove();
+  document.body.classList.remove('dragging-meal');
+  document.querySelectorAll('.grid-slot.drag-source, .grid-slot.drag-over')
+    .forEach(el => el.classList.remove('drag-source', 'drag-over'));
+}
+
+function markJustDragged() {
+  // A click only fires natively when mousedown/mouseup land on the same element, which
+  // never happens for a drag that actually moved a meal to a different slot — so there's
+  // no click event to reset this flag on. Clear it on a timer instead of waiting for one.
+  _justDragged = true;
+  setTimeout(() => { _justDragged = false; }, 0);
+}
+
+function finishDrag() {
+  const drag = _drag;
+  _drag = null;
+  markJustDragged();
+  teardownDrag(drag);
+
+  const target = drag.lastOverSlot;
+  if (!target) return;
+  const dstDate = target.dataset.date;
+  const dstMealTime = target.dataset.mealtime;
+  if (dstDate === drag.srcDate && dstMealTime === drag.srcMealTime) return;
+  moveMeal(drag.srcDate, drag.srcMealTime, dstDate, dstMealTime);
+}
+
+function abortDrag() {
+  if (!_drag) { cancelPending(); return; }
+  const drag = _drag;
+  _drag = null;
+  markJustDragged();
+  teardownDrag(drag);
+}
+
+async function moveMeal(srcDate, srcMealTime, dstDate, dstMealTime) {
+  const srcSk = `DAYMEAL#${srcDate}#${srcMealTime}`;
+  const dstSk = `DAYMEAL#${dstDate}#${dstMealTime}`;
+  const srcMeal = currentDayMeals[srcSk];
+  if (!srcMeal || (!(srcMeal.dishes || []).length && !srcMeal.eatingOut)) return;
+
+  const dstMeal = currentDayMeals[dstSk];
+  const dstHasContent = Boolean(dstMeal?.eatingOut) || (dstMeal?.dishes || []).length > 0;
+  const srcPayload = { dishes: srcMeal.dishes || [], eatingOut: srcMeal.eatingOut || false };
+  const dstPayloadForSrcSlot = dstHasContent
+    ? { dishes: dstMeal.dishes || [], eatingOut: dstMeal.eatingOut || false }
+    : null;
+
+  try {
+    await apiPut(`/mealplans/${currentPlanId}/daymeals/${dstDate}/${dstMealTime}`, srcPayload);
+  } catch (err) {
+    showToast(err.message);
+    return;
+  }
+
+  currentDayMeals[dstSk] = { SK: dstSk, date: dstDate, mealTime: dstMealTime, ...srcPayload };
+  mockPersistDayMeal(currentPlanId, dstDate, dstMealTime, srcPayload.dishes, srcPayload.eatingOut);
+
+  try {
+    if (dstPayloadForSrcSlot) {
+      await apiPut(`/mealplans/${currentPlanId}/daymeals/${srcDate}/${srcMealTime}`, dstPayloadForSrcSlot);
+      currentDayMeals[srcSk] = { SK: srcSk, date: srcDate, mealTime: srcMealTime, ...dstPayloadForSrcSlot };
+      mockPersistDayMeal(currentPlanId, srcDate, srcMealTime, dstPayloadForSrcSlot.dishes, dstPayloadForSrcSlot.eatingOut);
+      showToast('Meals swapped');
+    } else {
+      await apiDelete(`/mealplans/${currentPlanId}/daymeals/${srcDate}/${srcMealTime}`);
+      delete currentDayMeals[srcSk];
+      mockRemoveDayMeal(currentPlanId, srcDate, srcMealTime);
+      showToast('Meal moved');
+    }
+  } catch (err) {
+    // Destination write already succeeded — leave the source slot's in-memory state untouched
+    // so the UI doesn't claim it was cleared/swapped when the server still has the old data.
+    showToast(`Moved, but couldn't update the original slot — ${err.message}`);
+  }
+
+  renderDateGrid();
 }
 
 function deletePlanFromDetail() {
@@ -856,7 +1070,37 @@ function mockRemoveDayMeal(planId, date, mealTime) {
 // =====================
 // Save / Clear slot
 // =====================
+async function ensureDishesPersisted() {
+  // "+ Create" in the dropdown is the only path that normally registers a new dish in
+  // /dishes. A user can just as easily type a brand-new name and go straight to Save
+  // without ever picking that suggestion — that dish would otherwise only ever live
+  // inline on this day-meal record and never appear on the Recipes page.
+  for (const d of currentSlotDishes) {
+    const name = d.dishName.trim();
+    if (!name) continue;
+    if (allDishes.some(ad => ad.dishId === d.dishId)) continue;
+
+    const existingByName = allDishes.find(ad => ad.name.toLowerCase() === name.toLowerCase());
+    if (existingByName) {
+      d.dishId = existingByName.dishId;
+      continue;
+    }
+
+    try {
+      const newDish = await apiPost('/dishes', { name, ingredients: d.ingredients });
+      d.dishId = newDish?.dishId || newDish?.id || d.dishId;
+      allDishes.push({ dishId: d.dishId, name, ingredients: d.ingredients });
+      mockPersistDishes();
+    } catch (err) {
+      showToast(`Could not save "${name}" as a recipe — ${err.message}`);
+    }
+  }
+  buildIngredientSuggestions();
+}
+
 async function saveSlot() {
+  await ensureDishesPersisted();
+
   const dishes = currentSlotEatingOut ? [] : currentSlotDishes
     .filter(d => d.dishName.trim())
     .map(d => ({

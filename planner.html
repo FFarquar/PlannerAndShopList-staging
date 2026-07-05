@@ -79,6 +79,16 @@
     }
     .grid-slot:hover { background: #f0f9ff; }
     .grid-slot:last-child { border-right: none; }
+    .grid-slot.has-content { cursor: grab; touch-action: none; user-select: none; -webkit-user-drag: none; }
+    .grid-slot.drag-source { opacity: 0.35; }
+    .grid-slot.drag-over { background: #dbeafe; outline: 2px dashed #3b82f6; outline-offset: -2px; }
+    .drag-ghost {
+      position: fixed; top: 0; left: 0; pointer-events: none; z-index: 1000;
+      background: #fff; border: 1px solid #93c5fd; border-radius: 8px;
+      padding: 0.4rem 0.6rem; font-size: 0.8rem; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      transform: translate(-50%, -120%) scale(1.03); max-width: 220px; opacity: 0.95;
+    }
+    body.dragging-meal, body.dragging-meal * { cursor: grabbing !important; }
     .slot-dishes { font-size: 0.8rem; color: #374151; }
     .slot-dish-tag { display: inline-block; background: #dbeafe; color: #1e40af; border-radius: 4px; padding: 0.15rem 0.4rem; margin: 0.1rem 0.1rem 0 0; font-size: 0.75rem; }
     .slot-empty { font-size: 0.75rem; color: #cbd5e1; font-style: italic; }
