@@ -65,6 +65,23 @@ function _hideLoading() {
   }
 }
 
+// A hung request (cold Lambda/authorizer, flaky mobile network) would otherwise leave
+// _showLoading() active forever with no way to recover short of reloading the page.
+const REQUEST_TIMEOUT_MS = 15000;
+
+async function fetchWithTimeout(url, options) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('Request timed out — check your connection and try again');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function apiGet(endpoint, mockFile) {
   if (USE_MOCK && mockFile) {
     const res = await fetch(`./mockdata/${mockFile}`, { cache: 'no-cache' });
@@ -72,7 +89,7 @@ async function apiGet(endpoint, mockFile) {
   }
   _showLoading();
   try {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, { headers: authHeaders() });
+    const res = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, { headers: authHeaders() });
     if (handleAuthError(res)) return null;
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -88,7 +105,7 @@ async function apiPost(endpoint, body) {
   if (USE_MOCK) return { success: true, _mock: true, ...body, id: crypto.randomUUID() };
   _showLoading();
   try {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const res = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify(body),
@@ -108,7 +125,7 @@ async function apiPut(endpoint, body) {
   if (USE_MOCK) return { success: true, _mock: true, ...body };
   _showLoading();
   try {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const res = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
       headers: authHeaders(),
       body: JSON.stringify(body),
@@ -128,7 +145,7 @@ async function apiDelete(endpoint) {
   if (USE_MOCK) return { success: true, _mock: true };
   _showLoading();
   try {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const res = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
       method: 'DELETE',
       headers: authHeaders(),
     });
