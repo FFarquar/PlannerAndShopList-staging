@@ -622,7 +622,7 @@ function openScanReviewModal(dishId) {
     const qtyUnit = [ing.quantity, ing.unit].filter(Boolean).join(' ');
     return `
       <label class="fbi-ing-item">
-        <input type="checkbox" data-idx="${i}" checked />
+        <input type="checkbox" data-idx="${i}" />
         ${esc(ing.name)}${qtyUnit ? `<span class="ing-suggest-sub">${esc(qtyUnit)}</span>` : ''}
       </label>
     `;
