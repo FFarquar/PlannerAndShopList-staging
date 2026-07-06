@@ -180,6 +180,11 @@ async function apiScrapeRecipe(url) {
   return apiGet(`/dishes/scrape-recipe?${params}`, null);
 }
 
+async function apiExtractRecipeIngredients(dishId) {
+  if (USE_MOCK) throw new Error('Ingredient scanning is not available in local mode — please add ingredients manually');
+  return apiGet(`/dishes/${dishId}/recipe-extract-ingredients`, null);
+}
+
 async function apiUploadToS3(uploadUrl, file) {
   const res = await fetch(uploadUrl, {
     method: 'PUT',

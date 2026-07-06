@@ -8,6 +8,8 @@ let recipeType = 'url';     // 'url' or 'file'
 let scrapeAttempted = false;
 let dishScrapeAttempted = false;
 let confirmCallback = null;
+let scanCandidates = [];
+let scanReviewDishId = null;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -293,6 +295,7 @@ async function saveRecipe() {
   const newName = document.getElementById('recipeNameInput').value.trim();
   if (!newName) { showToast('Recipe name is required'); return; }
   const recipeNotes = document.getElementById('recipeNotesInput').value.trim() || null;
+  let newlyUploaded = false;
 
   try {
     if (recipeType === 'url') {
@@ -331,6 +334,7 @@ async function saveRecipe() {
           await apiUploadToS3(urlResult.uploadUrl, file);
           showUploadProgress(80, 'Saving…');
         }
+        newlyUploaded = !urlResult._mock;
 
         const attachment = {
           s3Key: urlResult.s3Key,
@@ -360,6 +364,10 @@ async function saveRecipe() {
     closeRecipeModal();
     renderDishes();
     showToast('Recipe saved');
+
+    if (newlyUploaded) {
+      promptScanForIngredients(dishId);
+    }
   } catch (err) {
     document.getElementById('uploadProgress').style.display = 'none';
     showToast('Error: ' + err.message);
@@ -568,16 +576,85 @@ function confirmDeleteDish(dishId) {
 }
 
 // ─── Confirm dialog ───────────────────────────────────────────────────────────
-function showConfirm(msg, onOk) {
+function showConfirm(msg, onOk, okLabel = 'Delete', okClass = 'btn-danger') {
   document.getElementById('confirmMsg').textContent = msg;
   confirmCallback = onOk;
-  document.getElementById('confirmOkBtn').onclick = () => { closeConfirm(); onOk(); };
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = okLabel;
+  okBtn.className = `btn ${okClass}`;
+  okBtn.onclick = () => { closeConfirm(); onOk(); };
   document.getElementById('confirmOverlay').classList.add('open');
 }
 
 function closeConfirm() {
   document.getElementById('confirmOverlay').classList.remove('open');
   confirmCallback = null;
+}
+
+// ─── Scan recipe attachment for ingredients ──────────────────────────────────
+function promptScanForIngredients(dishId) {
+  showConfirm(
+    'Scan this file for ingredients?',
+    () => runIngredientScan(dishId),
+    'Scan for Ingredients',
+    'btn-primary'
+  );
+}
+
+async function runIngredientScan(dishId) {
+  try {
+    const result = await apiExtractRecipeIngredients(dishId);
+    if (!result?.ingredients?.length) {
+      showToast('No ingredients found in this file — please add them manually.');
+      return;
+    }
+    scanCandidates = result.ingredients;
+    openScanReviewModal(dishId);
+  } catch (err) {
+    showToast(err.message || 'Could not scan this file. Please add ingredients manually.');
+  }
+}
+
+function openScanReviewModal(dishId) {
+  scanReviewDishId = dishId;
+  const list = document.getElementById('scanReviewList');
+  list.innerHTML = scanCandidates.map((ing, i) => {
+    const qtyUnit = [ing.quantity, ing.unit].filter(Boolean).join(' ');
+    return `
+      <label class="fbi-ing-item">
+        <input type="checkbox" data-idx="${i}" checked />
+        ${esc(ing.name)}${qtyUnit ? `<span class="ing-suggest-sub">${esc(qtyUnit)}</span>` : ''}
+      </label>
+    `;
+  }).join('');
+  document.getElementById('scanReviewModal').classList.add('open');
+}
+
+function closeScanReviewModal() {
+  document.getElementById('scanReviewModal').classList.remove('open');
+  scanCandidates = [];
+  scanReviewDishId = null;
+}
+
+function addSelectedScanIngredients() {
+  const selectedIdx = [...document.querySelectorAll('#scanReviewList input[type="checkbox"]:checked')]
+    .map(cb => parseInt(cb.dataset.idx, 10));
+
+  if (!selectedIdx.length) {
+    showToast('No ingredients selected');
+    closeScanReviewModal();
+    return;
+  }
+
+  const dishId = scanReviewDishId;
+  const selected = selectedIdx.map(i => scanCandidates[i]);
+  closeScanReviewModal();
+
+  if (!document.getElementById('dishModal').classList.contains('open') || editingDishId !== dishId) {
+    openDishModal(dishId);
+  }
+  selected.forEach(ing => addIngredientRow(ing));
+  showToast(`Added ${selected.length} ingredient${selected.length !== 1 ? 's' : ''} — review and Save`);
 }
 
 // ─── Toast ────────────────────────────────────────────────────────────────────

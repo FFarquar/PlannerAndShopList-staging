@@ -142,6 +142,9 @@
 
     /* Find by Ingredient modal */
     .fbi-modal { max-width: 620px; }
+
+    /* Ingredient scan review modal */
+    .review-modal { max-width: 640px; }
     .fbi-search { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; outline: none; margin-bottom: 0.6rem; }
     .fbi-search:focus { border-color: #3b82f6; }
     .fbi-mode-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; font-size: 0.85rem; color: #374151; }
@@ -332,6 +335,21 @@
       <div class="modal-actions">
         <button class="btn btn-secondary btn-sm" onclick="clearFbiSelection()">Clear</button>
         <button class="btn btn-primary" onclick="closeFbiModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ingredient scan review modal -->
+  <div id="scanReviewModal" class="modal-overlay">
+    <div class="modal review-modal">
+      <h3>Review Scanned Ingredients</h3>
+      <p style="font-size:0.85rem; color:#64748b; margin-bottom:0.75rem;">
+        Uncheck anything that isn't really an ingredient, then add the rest to your list.
+      </p>
+      <div id="scanReviewList" class="fbi-ing-list"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeScanReviewModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="addSelectedScanIngredients()">Add Selected</button>
       </div>
     </div>
   </div>
