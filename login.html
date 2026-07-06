@@ -139,7 +139,7 @@
         setUserLoginID(loginID);
         window.location.href = 'planner.html';
       } catch (err) {
-        errorMsg.textContent = err.message || 'Login failed. Please try again.';
+        errorMsg.textContent = err.message || 'Login failed. Please try again...';
         errorMsg.style.display = 'block';
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In';
