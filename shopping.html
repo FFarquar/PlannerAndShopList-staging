@@ -61,6 +61,15 @@
     .add-form .f-unit { width: 70px; }
     .add-form .f-store { flex: 1; min-width: 110px; }
 
+    /* Item-name autocomplete (add form) */
+    .ing-name-wrap { position: relative; }
+    .ing-name-wrap input { width: 100%; }
+    .ing-suggest-dropdown { position: absolute; top: 100%; left: 0; min-width: 220px; background: #fff; border: 1px solid #d1d5db; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); z-index: 60; max-height: 200px; overflow-y: auto; display: none; }
+    .ing-suggest-dropdown.open { display: block; }
+    .ing-suggest-option { padding: 0.45rem 0.75rem; cursor: pointer; font-size: 0.85rem; }
+    .ing-suggest-option:hover, .ing-suggest-option.focused { background: #f0f9ff; }
+    .ing-suggest-sub { font-size: 0.73rem; color: #94a3b8; margin-left: 0.4rem; }
+
     /* Store sections */
     .store-section { margin-bottom: 1.25rem; }
     .store-header {
@@ -106,6 +115,7 @@
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: none; padding: 1rem; padding-top: calc(3.5rem + 1rem); overflow-y: auto; }
     .modal-overlay.open { display: flex; align-items: center; justify-content: center; }
     .modal { background: #fff; border-radius: 12px; padding: 1.75rem; width: 100%; max-width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-height: calc(100vh - 3.5rem - 3rem); overflow-y: auto; }
+    .modal.modal-wide { max-width: 460px; }
 
     /* Loading overlay */
     #loadingOverlay { position: fixed; inset: 0; background: rgba(15,23,42,0.3); z-index: 800; display: none; align-items: center; justify-content: center; }
@@ -122,6 +132,15 @@
     .stores-add-row { display: flex; gap: 0.5rem; align-items: center; }
     .stores-add-row input { flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; outline: none; }
     .stores-add-row input:focus { border-color: #3b82f6; }
+
+    /* Previous list modal */
+    .previous-list-subtitle { font-size: 0.82rem; color: #64748b; margin-bottom: 0.75rem; }
+    .previous-list-items { margin-bottom: 1rem; max-height: 320px; overflow-y: auto; }
+    .prev-list-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.2rem; font-size: 0.9rem; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+    .prev-list-item:last-child { border-bottom: none; }
+    .prev-list-check { width: 1rem; height: 1rem; cursor: pointer; accent-color: #2563eb; flex-shrink: 0; }
+    .prev-list-name { flex: 1; }
+    .prev-list-sub { font-size: 0.75rem; color: #94a3b8; }
 
     .plan-info { font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem; }
 
@@ -168,6 +187,7 @@
 
     <div class="toolbar">
       <button class="btn btn-primary btn-sm" onclick="toggleAddForm()">+ Add Item</button>
+      <button class="btn btn-secondary btn-sm" onclick="openPreviousListModal()">⧉ Previous List</button>
       <button class="btn btn-secondary btn-sm" onclick="refreshFromPlan()">↻ Refresh from Meal Plan</button>
     </div>
 
@@ -175,7 +195,10 @@
     <div id="addForm" class="add-form">
       <h3>Add Item Manually</h3>
       <div class="add-form-row">
-        <input type="text" id="addName" class="f-name" placeholder="Item name" />
+        <div class="ing-name-wrap f-name">
+          <input type="text" id="addName" placeholder="Item name" autocomplete="off" />
+          <div id="addNameSuggest" class="ing-suggest-dropdown"></div>
+        </div>
         <input type="number" id="addQty" class="f-qty" placeholder="Qty" min="0" step="any" />
         <input type="text" id="addUnit" class="f-unit" placeholder="Unit" />
         <select id="addStore" class="f-store"><option value="">— Store —</option></select>
@@ -200,6 +223,19 @@
       </div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closeStoresModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Previous list modal -->
+  <div id="previousListModal" class="modal-overlay">
+    <div class="modal modal-wide">
+      <h3>Copy from Previous List</h3>
+      <div id="previousListSubtitle" class="previous-list-subtitle"></div>
+      <div id="previousListItems" class="previous-list-items"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closePreviousListModal()">Cancel</button>
+        <button id="copyPreviousBtn" class="btn btn-primary" onclick="copySelectedPreviousItems()" disabled>Copy Selected</button>
       </div>
     </div>
   </div>
